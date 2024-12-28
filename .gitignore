@@ -399,3 +399,4 @@ FodyWeavers.xsd
 
 # PIO
 .pio/*
+**/.DS_Store
