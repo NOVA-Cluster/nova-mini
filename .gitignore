@@ -400,3 +400,6 @@ FodyWeavers.xsd
 # PIO
 .pio/*
 **/.DS_Store
+
+# Ignore .DS_Store files regardless of their location
+.DS_Store
