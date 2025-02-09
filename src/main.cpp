@@ -13,9 +13,6 @@
 #include "ESPAsyncWebServer.h"
 #include <ESPUI.h>
 #include "configuration.h"
-#include <MIDI.h>
-#include <SoftwareSerial.h>
-#include "MIDIControl.hpp"
 
 #include "Web.h"
 
@@ -32,11 +29,36 @@ std::shared_ptr<ShiftRegister74HC595_NonTemplate> HT74HC595 =
 */
 
 void TaskWeb(void *pvParameters);
-void TaskMidi(void *pvParameters);
 void TaskOutputs(void *pvParameters);
+void TaskPulseRelay(void *pvParameters);
 
 DNSServer dnsServer;
 AsyncWebServer webServer(80);
+
+// Configurable maximum relay duration in ms
+const uint32_t MAX_RELAY_DURATION = 250;
+
+// Updated non-blocking relay control implementation
+struct RelayTask
+{
+    bool active;
+    uint32_t offTime;
+    uint32_t startTime; // New field to record when the relay was turned on
+};
+const int NUM_RELAYS = 8;
+RelayTask relayTasks[NUM_RELAYS] = {{false, 0, 0}};
+
+// Function to trigger a relay for a specified duration (in ms), clamped by MAX_RELAY_DURATION.
+void triggerRelay(int channel, int duration)
+{
+    if (channel < 0 || channel >= NUM_RELAYS)
+        return;
+    sr.set(channel, HIGH);
+    relayTasks[channel].active = true;
+    relayTasks[channel].startTime = millis();
+    // Use the requested duration but TaskOutputs will enforce MAX_RELAY_DURATION.
+    relayTasks[channel].offTime = millis() + duration;
+}
 
 void setup()
 {
@@ -65,7 +87,18 @@ void setup()
     Serial.println("Set GPIO4 to low level to enable relay output");
     digitalWrite(HT74HC595_OUT_EN, LOW);
 
-    initializeMIDI();
+    // Initialize LittleFS and try to recover if mount fails.
+    if(!LittleFS.begin()){
+        Serial.println("LittleFS mount failed, formatting...");
+        LittleFS.format();
+        if(!LittleFS.begin()){
+            Serial.println("LittleFS mount failed after format!");
+        } else {
+            Serial.println("LittleFS mount succeeded after format.");
+        }
+    } else {
+        Serial.println("LittleFS mounted successfully.");
+    }
 
     String macAddress = WiFi.macAddress();
     String AP_String = "";
@@ -94,27 +127,21 @@ void setup()
     Serial.println("Create TaskWeb - Done");
     delay(10);
 
-    Serial.println("Create TaskMidi");
-    delay(10);
-    // xTaskCreate(&TaskMidi, "TaskMidi", 8 * 1024, NULL, 100, NULL);
-    delay(10);
-    Serial.println("Create TaskMidi - Done");
-    delay(10);
-
     Serial.println("Create TaskOutputs");
     delay(10);
-    // xTaskCreate(&TaskOutputs, "TaskOutputs", 8 * 1024, NULL, 5, NULL);
+    xTaskCreate(&TaskOutputs, "TaskOutputs", 8 * 1024, NULL, 5, NULL); // Now starting TaskOutputs
     delay(10);
     Serial.println("Create TaskOutputs - Done");
+
+    // Create new TaskPulseRelay to handle relay #8 pulsing.
+    Serial.println("Create TaskPulseRelay");
+    delay(10);
+    xTaskCreate(&TaskPulseRelay, "TaskPulseRelay", 4 * 1024, NULL, 5, NULL);
+    delay(10);
+    Serial.println("Create TaskPulseRelay - Done");
 }
 
-void controlRelay(int channel, const char *message, int delayTime)
-{
-    // Serial.println(message);
-    sr.set(channel, HIGH);
-    delay(delayTime);
-    sr.set(channel, LOW);
-}
+// Removed unused controlRelay function
 
 void loop()
 {
@@ -149,43 +176,7 @@ void TaskWeb(void *pvParameters) // This is a task.
     }
 }
 
-void TaskMidi(void *pvParameters) // This is a task.
-{
-    (void)pvParameters;
-    UBaseType_t uxHighWaterMark;
-    TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
-    const char *pcTaskName = pcTaskGetName(xTaskHandle);
-
-    Serial.println("TaskMidi is running");
-    while (1) // A Task shall never return or exit.
-    {
-        // Driving beat (Channel 10)
-        playTechnoBeat();
-
-        // Bassline (Channel 2)
-        playTechnoBassline();
-
-        // Minimal melody (Channel 1)
-        playTechnoMelody();
-
-        delay(2000); // Wait before repeating the sequence
-
-        yield(); // Should't do anything but it's here incase the watchdog needs it.
-        delay(1);
-
-        static uint32_t lastExecutionTime = 0;
-        if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL)
-        {
-            /* Calling the function will have used some stack space, we would
-                therefore now expect uxTaskGetStackHighWaterMark() to return a
-                value lower than when it was called on entering the task. */
-            uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-            Serial.printf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
-            lastExecutionTime = millis();
-        }
-    }
-}
-
+// Updated TaskOutputs using non blocking delays.
 void TaskOutputs(void *pvParameters) // This is a task.
 {
     (void)pvParameters;
@@ -196,27 +187,60 @@ void TaskOutputs(void *pvParameters) // This is a task.
     Serial.println("TaskOutputs is running");
     while (1) // A Task shall never return or exit.
     {
-        controlRelay(0, "Relay(CH1) turn on", 1000);
-        controlRelay(1, "Relay(CH2) turn on", 1000);
-        controlRelay(2, "Relay(CH3) turn on", 1000);
-        controlRelay(3, "Relay(CH4) turn on", 1000);
-        controlRelay(4, "Relay(CH5) turn on", 1000);
-        controlRelay(5, "Relay(CH6) turn on", 1000);
-        controlRelay(6, "LED (CH7) turn on", 1000);
-        controlRelay(7, "LED (CH8) turn on", 1000);
+        uint32_t currentTime = millis();
+        // Turn off any relays whose duration has elapsed or exceed maximum allowed time.
+        for (int i = 0; i < NUM_RELAYS; i++)
+        {
+            if (relayTasks[i].active && (currentTime >= relayTasks[i].offTime || (currentTime - relayTasks[i].startTime) >= MAX_RELAY_DURATION))
+            {
+                sr.set(i, LOW);
+                relayTasks[i].active = false;
+            }
+        }
 
-        yield(); // Should't do anything but it's here incase the watchdog needs it.
+        // ... Code to process incoming relay messages ...
+        // For example, to simulate turning on relay 1 for 50 ms, uncomment:
+        // triggerRelay(1, 50);
+
+        yield(); // let other tasks run
         delay(1);
 
         static uint32_t lastExecutionTime = 0;
         if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL)
         {
-            /* Calling the function will have used some stack space, we would
-                therefore now expect uxTaskGetStackHighWaterMark() to return a
-                value lower than when it was called on entering the task. */
             uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
             Serial.printf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
             lastExecutionTime = millis();
+        }
+    }
+}
+
+// New task to pulse relay #8 every second.
+void TaskPulseRelay(void *pvParameters)
+{
+    (void)pvParameters;
+    UBaseType_t uxHighWaterMark;
+    TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
+    const char *pcTaskName = pcTaskGetName(xTaskHandle);
+    Serial.println("TaskPulseRelay is running");
+    while(1)
+    {
+        uint32_t currentTime = millis();
+        // Pulse relay #8 (index 7) on for 100 ms every second.
+        static uint32_t lastPulse = 0;
+        if(currentTime - lastPulse >= 1000)
+        {
+            triggerRelay(7, 100);
+            lastPulse = currentTime;
+        }
+        yield();
+        delay(1);
+        static uint32_t lastExecutionTime = 0;
+        if(currentTime - lastExecutionTime >= REPORT_TASK_INTERVAL)
+        {
+            uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+            Serial.printf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
+            lastExecutionTime = currentTime;
         }
     }
 }

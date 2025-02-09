@@ -64,10 +64,36 @@ void slider(Control *sender, int type)
 
 void buttonCallback(Control *sender, int type)
 {
-    Serial.print("Button: ID: ");
-    Serial.print(sender->id);
-    Serial.print(", Value: ");
-    Serial.println(sender->value);
+    if (type == B_DOWN)
+    {
+        // Handle the button down event
+        Serial.print("Button Down: ID: ");
+        Serial.print(sender->id);
+        Serial.print(", Value: ");
+        Serial.println(sender->value);
+        
+        // Map each poofers button to its relay channel.
+        if(sender->id == pooferA1)
+        {
+            triggerRelay(0, 100);
+        }
+        else if(sender->id == pooferA2)
+        {
+            triggerRelay(1, 100);
+        }
+        else if(sender->id == pooferA3)
+        {
+            triggerRelay(2, 100);
+        }
+        else if(sender->id == pooferA4)
+        {
+            triggerRelay(3, 100);
+        }
+    }
+    else if (type == B_UP)
+    {
+        // Handle the button up event (do nothing)
+    }
 }
 
 void switchExample(Control *sender, int value)
