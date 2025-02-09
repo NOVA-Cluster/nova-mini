@@ -40,6 +40,8 @@ uint16_t seqBoomAll, seqBoomLeftRight, seqBoomRightLeft;
 uint16_t starSeq_SEQ_POOF_END_TO_END, starSeq_SEQ_BOOMER_LEFT_TO_RIGHT, starSeq_SEQ_BOOMER_RIGHT_TO_LEFT, starSeq_SEQ_BOOM_FAST, starSeq_SEQ_BOOM_WAVE_IN, starSeq_SEQ_OFF;
 uint16_t starSeq_SEQ_BOOM_POOF;
 
+uint16_t dumpSwitch; // Added global variable for the Dump switch
+uint16_t dumpDurationSlider; // New slider control for dump duration
 
 void numberCall(Control *sender, int type)
 {
@@ -71,23 +73,23 @@ void buttonCallback(Control *sender, int type)
         Serial.print(sender->id);
         Serial.print(", Value: ");
         Serial.println(sender->value);
-        
-        // Map each poofers button to its relay channel.
-        if(sender->id == pooferA1)
+
+        // Map each poofers button to its relay channel with updated duration (250ms).
+        if (sender->id == pooferA1)
         {
-            triggerRelay(0, 100);
+            triggerRelay(0, 250);
         }
-        else if(sender->id == pooferA2)
+        else if (sender->id == pooferA2)
         {
-            triggerRelay(1, 100);
+            triggerRelay(1, 250);
         }
-        else if(sender->id == pooferA3)
+        else if (sender->id == pooferA3)
         {
-            triggerRelay(2, 100);
+            triggerRelay(2, 250);
         }
-        else if(sender->id == pooferA4)
+        else if (sender->id == pooferA4)
         {
-            triggerRelay(3, 100);
+            triggerRelay(3, 250);
         }
     }
     else if (type == B_UP)
@@ -96,13 +98,29 @@ void buttonCallback(Control *sender, int type)
     }
 }
 
-void switchExample(Control *sender, int value)
+// Renamed callback function; previously "switchExample"
+void switchCallback(Control *sender, int value)
 {
-
     Serial.print("Switch: ID: ");
     Serial.print(sender->id);
     Serial.print(", Value: ");
     Serial.println(sender->value);
+
+    // If this is the Dump switch:
+    if (sender->id == dumpSwitch)
+    {
+        if (sender->value == "1")
+        {
+            Serial.println("Dump switch activated: triggering pooferA1 for 10 seconds");
+            triggerRelayLong(0, 10000);
+        }
+        else if (sender->value == "0")
+        {
+            Serial.println("Dump switch deactivated: turning off pooferA1");
+            disableRelay(0);
+        }
+    }
+    // ...existing behavior...
 }
 
 void selectExample(Control *sender, int value)
@@ -118,22 +136,29 @@ void webSetup()
     Serial.println("In webSetup()");
     // Add tabs
     uint16_t mainTab = ESPUI.addControl(ControlType::Tab, "Main", "Main");
+    // ...existing tab creations...
+
+    // Add Device Info label to Main tab.
+    String deviceInfo = "MAC: " + WiFi.macAddress() + ", IP: " + WiFi.softAPIP().toString();
+    uint16_t deviceInfoLabel = ESPUI.addControl(ControlType::Label, "Device Info", deviceInfo, ControlColor::None, mainTab);
+
     // uint16_t settingsTab = ESPUI.addControl(ControlType::Tab, "Settings", "Settings");
     uint16_t manualTab = ESPUI.addControl(ControlType::Tab, "Manual", "Manual");
     uint16_t simonasTab = ESPUI.addControl(ControlType::Tab, "Simona", "Simona");
     uint16_t lightingTab = ESPUI.addControl(ControlType::Tab, "Lighting", "Lighting");
     uint16_t sysInfoTab = ESPUI.addControl(ControlType::Tab, "System Info", "System Info");
     uint16_t resetTab = ESPUI.addControl(ControlType::Tab, "Reset", "Reset");
+    uint16_t dumpTab = ESPUI.addControl(ControlType::Tab, "Dump", "Dump"); // New Dump tab
 
     // Add status label above all tabs
     status = ESPUI.addControl(ControlType::Label, "Status:", "Unknown Status", ControlColor::Turquoise);
 
     //----- (Main) -----
     controlMillis = ESPUI.addControl(ControlType::Label, "Uptime", "0", ControlColor::Emerald, mainTab);
-    // mainDrunktardSwitch = ESPUI.addControl(ControlType::Switcher, "Drunktard", String(enable->isDrunktard()), ControlColor::None, mainTab, &switchExample);
+    // mainDrunktardSwitch = ESPUI.addControl(ControlType::Switcher, "Drunktard", String(enable->isDrunktard()), ControlColor::None, mainTab, &switchCallback);
 
     //----- (Settings) -----
-    // ESPUI.addControl(ControlType::Switcher, "Sleep (Disable)", "", ControlColor::None, settingsTab, &switchExample);
+    // ESPUI.addControl(ControlType::Switcher, "Sleep (Disable)", "", ControlColor::None, settingsTab, &switchCallback);
 
     //----- (Manual) -----
 
@@ -149,8 +174,15 @@ void webSetup()
 
     // Reset tab
     ESPUI.addControl(ControlType::Label, "**WARNING**", "Don't even think of doing anything in this tab unless you want to break something!!", ControlColor::Sunflower, resetTab);
-    resetConfigSwitch = ESPUI.addControl(ControlType::Switcher, "Reset Configurations", "0", ControlColor::Sunflower, resetTab, &switchExample);
-    resetRebootSwitch = ESPUI.addControl(ControlType::Switcher, "Reboot", "0", ControlColor::Sunflower, resetTab, &switchExample);
+    resetConfigSwitch = ESPUI.addControl(ControlType::Switcher, "Reset Configurations", "0", ControlColor::Sunflower, resetTab, &switchCallback);
+    resetRebootSwitch = ESPUI.addControl(ControlType::Switcher, "Reboot", "0", ControlColor::Sunflower, resetTab, &switchCallback);
+
+    // Add Dump tab control using switchCallback callback.
+    // Add Dump Duration slider above the Dump switch.
+    // Slider range: 60 (1 minute) to 3600 (1 hour). Initial value: "60".
+    dumpDurationSlider = ESPUI.addControl(ControlType::Slider, "Dump Duration (secs)", "60", ControlColor::None, dumpTab, &slider);
+
+    dumpSwitch = ESPUI.addControl(ControlType::Switcher, "Dump", "0", ControlColor::Alizarin, dumpTab, &switchCallback);
 
     // Enable this option if you want sliders to be continuous (update during move) and not discrete (update on stop)
     // ESPUI.sliderContinuous = true;
