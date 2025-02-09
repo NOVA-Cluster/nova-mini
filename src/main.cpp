@@ -42,11 +42,12 @@ const uint32_t MAX_RELAY_DURATION = 250;
 struct RelayTask
 {
     bool active;
+    bool longActive; // New flag for long duration events.
     uint32_t offTime;
     uint32_t startTime; // New field to record when the relay was turned on
 };
 const int NUM_RELAYS = 8;
-RelayTask relayTasks[NUM_RELAYS] = {{false, 0, 0}};
+RelayTask relayTasks[NUM_RELAYS] = {{false, false, 0, 0}};
 
 // Function to trigger a relay for a specified duration (in ms), clamped by MAX_RELAY_DURATION.
 void triggerRelay(int channel, int duration)
@@ -55,9 +56,31 @@ void triggerRelay(int channel, int duration)
         return;
     sr.set(channel, HIGH);
     relayTasks[channel].active = true;
+    relayTasks[channel].longActive = false;
     relayTasks[channel].startTime = millis();
     // Use the requested duration but TaskOutputs will enforce MAX_RELAY_DURATION.
     relayTasks[channel].offTime = millis() + duration;
+}
+
+// New function to trigger a relay disregarding the MAX_RELAY_DURATION clamp.
+void triggerRelayLong(int channel, int duration)
+{
+    if (channel < 0 || channel >= NUM_RELAYS)
+        return;
+    sr.set(channel, HIGH);
+    relayTasks[channel].active = true;
+    relayTasks[channel].longActive = true;
+    relayTasks[channel].startTime = millis();
+    relayTasks[channel].offTime = millis() + duration;
+}
+
+// New function to disable a relay.
+void disableRelay(int channel)
+{
+    if (channel < 0 || channel >= NUM_RELAYS)
+        return;
+    sr.set(channel, LOW);
+    relayTasks[channel].active = false;
 }
 
 void setup()
@@ -191,10 +214,27 @@ void TaskOutputs(void *pvParameters) // This is a task.
         // Turn off any relays whose duration has elapsed or exceed maximum allowed time.
         for (int i = 0; i < NUM_RELAYS; i++)
         {
-            if (relayTasks[i].active && (currentTime >= relayTasks[i].offTime || (currentTime - relayTasks[i].startTime) >= MAX_RELAY_DURATION))
+            if (relayTasks[i].active)
             {
-                sr.set(i, LOW);
-                relayTasks[i].active = false;
+                // For longActive relays, only offTime matters.
+                if (relayTasks[i].longActive)
+                {
+                    if (currentTime >= relayTasks[i].offTime)
+                    {
+                        sr.set(i, LOW);
+                        relayTasks[i].active = false;
+                    }
+                }
+                else
+                {
+                    // For normal pulses, enforce MAX_RELAY_DURATION.
+                    if (currentTime >= relayTasks[i].offTime ||
+                        (currentTime - relayTasks[i].startTime) >= MAX_RELAY_DURATION)
+                    {
+                        sr.set(i, LOW);
+                        relayTasks[i].active = false;
+                    }
+                }
             }
         }
 
