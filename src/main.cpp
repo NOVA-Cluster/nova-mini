@@ -13,6 +13,7 @@
 #include "ESPAsyncWebServer.h"
 #include <ESPUI.h>
 #include "configuration.h"
+#include "main.h" // Added include for initEspNowReceiver and relay control prototypes
 
 #include "Web.h"
 
@@ -142,6 +143,9 @@ void setup()
     Serial.println("Setting up Webserver");
     webSetup();
     Serial.println("Setting up Webserver - Done");
+
+    // Call initEspNowReceiver to initialize receiver functionality.
+    initEspNowReceiver();
 
     Serial.println("Create TaskWeb");
     delay(10);

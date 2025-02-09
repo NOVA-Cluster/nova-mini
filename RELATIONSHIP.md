@@ -1,9 +1,10 @@
 # Relationship between Nova Mini and Nova Mini Remote
 
 **Nova Mini (Receiver):**
-- Acts as the hardware controller.
-- Listens for incoming commands (via its web interface, network messages, etc.).
-- Triggers actions (e.g., relay operations) based on received commands.
+- Acts as an ESPNOW receiver.
+- Listens for incoming PooferMessage commands via ESPNOW.
+- Triggers actions (e.g., relay operations and LED effects) based on the received message.
+- Sends an acknowledgment (ACK) back to the sender using ESPNOW.
 
 **Nova Mini Remote (Sender):**
 - Provides a user interface to send control commands.
