@@ -4,6 +4,7 @@
 #include "main.h"          // For triggerRelay(), etc.
 #include "SimonaMessage.h" // Changed from PooferMessage.h
 #include "SimonaTypes.h"   // Added for SimonaTypes
+#include "SimonaDisplay.h"        // Added to declare display functions
 
 // Helper function to convert SimonaStage enum to a string.
 const char *stageToString(SimonaStage stage)
@@ -62,7 +63,37 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
         safeSerialPrintf("  litButton: %d\n", receivedMsg.litButton);
         safeSerialPrintf("  lastPressedButton: %d\n", receivedMsg.lastPressedButton);
 
-        // Removed LED processing loop since SimonaMessage has no 'poofers'
+        // Call the display function for the corresponding stage.
+        switch (receivedMsg.stage)
+        {
+            case SIMONA_STAGE_WAITING:
+                displaySimonaStageWaiting(receivedMsg);
+                break;
+            case SIMONA_STAGE_SEQUENCE_GENERATION:
+                displaySimonaStageSequenceGeneration(receivedMsg);
+                break;
+            case SIMONA_STAGE_TRANSITION:
+                displaySimonaStageTransition(receivedMsg);
+                break;
+            case SIMONA_STAGE_INPUT_COLLECTION:
+                displaySimonaStageInputCollection(receivedMsg);
+                break;
+            case SIMONA_STAGE_VERIFICATION:
+                displaySimonaStageVerification(receivedMsg);
+                break;
+            case SIMONA_STAGE_GAME_LOST:
+                displaySimonaStageGameLost(receivedMsg);
+                break;
+            case SIMONA_STAGE_GAME_WIN:
+                displaySimonaStageGameWin(receivedMsg);
+                break;
+            case SIMONA_STAGE_RESET:
+                displaySimonaStageReset(receivedMsg);
+                break;
+            default:
+                safeSerialPrintf("Unknown stage.\n");
+                break;
+        }
 
         // Send ack back to sender using its MAC
         esp_err_t result = esp_now_send(mac, (uint8_t *)&receivedMsg, sizeof(SimonaMessage));
