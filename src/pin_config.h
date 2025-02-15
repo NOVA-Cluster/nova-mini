@@ -8,14 +8,6 @@
  */
 #pragma once
 
-// Ethernet
-#define W5500_SCLK 9
-#define W5500_MISO 11
-#define W5500_MOSI 13
-#define W5500_CS 3
-#define W5500_RST 8
-#define W5500_INT 12
-
 // HT74HC595
 #define HT74HC595_CLOCK 5
 #define HT74HC595_LATCH 6

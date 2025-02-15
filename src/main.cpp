@@ -1,7 +1,7 @@
 #undef SMOOTH_FONT
 
 #include <ShiftRegister74HC595.h>
-#include "pin_config.h"
+#include "configuration.h"  // Renamed include from pin_config.h
 #include <iostream>
 #include <memory>
 #include <Arduino.h>
@@ -21,9 +21,9 @@
 #include "freertos/semphr.h"
 
 // Define the number of 74HC595 chips in cascade
-const uint8_t NUMBER_OF_SHIFT_REGISTERS = 1;
+// Removed: const uint8_t NUMBER_OF_SHIFT_REGISTERS = 1;
 
-// Create a ShiftRegister74HC595 object
+// Create a ShiftRegister74HC595 object using value from configuration.
 ShiftRegister74HC595<NUMBER_OF_SHIFT_REGISTERS> sr(HT74HC595_DATA, HT74HC595_CLOCK, HT74HC595_LATCH); // (dataPin, clockPin, latchPin)
 
 void TaskWeb(void *pvParameters);
@@ -34,7 +34,7 @@ DNSServer dnsServer;
 AsyncWebServer webServer(80);
 
 // Configurable maximum relay duration in ms
-const uint32_t MAX_RELAY_DURATION = 250;
+// Removed: const uint32_t MAX_RELAY_DURATION = 250;
 
 // Updated non-blocking relay control implementation
 struct RelayTask
@@ -83,12 +83,13 @@ void disableRelay(int channel)
 
 void setup()
 {
-    pinMode(39, OUTPUT);
-    digitalWrite(39, LOW);  // Set LOW to trigger reset
-    delay(50);              // Wait for reset to take effect
-    digitalWrite(39, HIGH); // Set HIGH to end reset
+    // Use configuration values for reset.
+    pinMode(RESET_PIN, OUTPUT);
+    digitalWrite(RESET_PIN, LOW);           // Set LOW to trigger reset
+    delay(RESET_LOW_DELAY_MS);              // Wait for reset to take effect
+    digitalWrite(RESET_PIN, HIGH);          // Set HIGH to end reset
 
-    delay(3000); // Wait for the serial monitor to open
+    delay(SERIAL_MONITOR_DELAY_MS);         // Wait for the serial monitor to open
 
     Serial.begin(921600); // Updated baud rate to match monitor_speed
     initSafeSerial(); // Initialize safe serial printing (new)
