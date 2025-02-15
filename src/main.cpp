@@ -14,6 +14,7 @@
 #include <ESPUI.h>
 #include "configuration.h"
 #include "main.h" // Added include for initEspNowReceiver and relay control prototypes
+#include "Utilities.h"  // Added include for safeSerialPrintf and initialization
 
 #include "Web.h"
 #include <stdarg.h>
@@ -24,12 +25,6 @@ const uint8_t NUMBER_OF_SHIFT_REGISTERS = 1;
 
 // Create a ShiftRegister74HC595 object
 ShiftRegister74HC595<NUMBER_OF_SHIFT_REGISTERS> sr(HT74HC595_DATA, HT74HC595_CLOCK, HT74HC595_LATCH); // (dataPin, clockPin, latchPin)
-
-/*
-std::shared_ptr<ShiftRegister74HC595_NonTemplate> HT74HC595 =
-    std::make_shared<ShiftRegister74HC595_NonTemplate>(8, HT74HC595_DATA,
-                                                       HT74HC595_CLOCK, HT74HC595_LATCH);
-*/
 
 void TaskWeb(void *pvParameters);
 void TaskOutputs(void *pvParameters);
@@ -86,22 +81,6 @@ void disableRelay(int channel)
     relayTasks[channel].active = false;
 }
 
-// Global semaphore for Serial prints
-SemaphoreHandle_t serialMutex;
-
-// Helper function to safely print to Serial
-void safeSerialPrintf(const char* format, ...)
-{
-    xSemaphoreTake(serialMutex, portMAX_DELAY);
-    char buf[256];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buf, sizeof(buf), format, args);
-    va_end(args);
-    Serial.print(buf);
-    xSemaphoreGive(serialMutex);
-}
-
 void setup()
 {
     pinMode(39, OUTPUT);
@@ -112,7 +91,7 @@ void setup()
     delay(3000); // Wait for the serial monitor to open
 
     Serial.begin(921600); // Updated baud rate to match monitor_speed
-    serialMutex = xSemaphoreCreateMutex(); // Moved here to initialize before safeSerialPrintf is used
+    initSafeSerial(); // Initialize safe serial printing (new)
 
     safeSerialPrintf("NOVA: MINI\n");
     safeSerialPrintf("setup() is running on core %d\n", xPortGetCoreID());
