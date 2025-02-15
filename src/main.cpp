@@ -16,6 +16,8 @@
 #include "main.h" // Added include for initEspNowReceiver and relay control prototypes
 
 #include "Web.h"
+#include <stdarg.h>
+#include "freertos/semphr.h"
 
 // Define the number of 74HC595 chips in cascade
 const uint8_t NUMBER_OF_SHIFT_REGISTERS = 1;
@@ -84,44 +86,61 @@ void disableRelay(int channel)
     relayTasks[channel].active = false;
 }
 
+// Global semaphore for Serial prints
+SemaphoreHandle_t serialMutex;
+
+// Helper function to safely print to Serial
+void safeSerialPrintf(const char* format, ...)
+{
+    xSemaphoreTake(serialMutex, portMAX_DELAY);
+    char buf[256];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buf, sizeof(buf), format, args);
+    va_end(args);
+    Serial.print(buf);
+    xSemaphoreGive(serialMutex);
+}
+
 void setup()
 {
     pinMode(39, OUTPUT);
-    digitalWrite(39, LOW);  // Set high the rest pin
+    digitalWrite(39, LOW);  // Set LOW to trigger reset
     delay(50);              // Wait for reset to take effect
-    digitalWrite(39, HIGH); // Set high the rest pin
+    digitalWrite(39, HIGH); // Set HIGH to end reset
 
     delay(3000); // Wait for the serial monitor to open
 
-    Serial.begin(115200);
-    Serial.println("NOVA: MINI");
-    Serial.print("setup() is running on core ");
-    Serial.println(xPortGetCoreID());
+    Serial.begin(921600); // Updated baud rate to match monitor_speed
+    serialMutex = xSemaphoreCreateMutex(); // Moved here to initialize before safeSerialPrintf is used
+
+    safeSerialPrintf("NOVA: MINI\n");
+    safeSerialPrintf("setup() is running on core %d\n", xPortGetCoreID());
 
     Serial.setDebugOutput(true);
 
-    Serial.println("Power on and set the 74HC595 to output disable mode");
+    safeSerialPrintf("Power on and set the 74HC595 to output disable mode\n");
     pinMode(HT74HC595_OUT_EN, OUTPUT);
     digitalWrite(HT74HC595_OUT_EN, HIGH); // Turn off output data HT74HC595
 
-    Serial.println("Set all relay outputs to low level");
+    safeSerialPrintf("Set all relay outputs to low level\n");
     // HT74HC595->setAllLow();
     sr.setAllLow();
 
-    Serial.println("Set GPIO4 to low level to enable relay output");
+    safeSerialPrintf("Set GPIO4 to low level to enable relay output\n");
     digitalWrite(HT74HC595_OUT_EN, LOW);
 
     // Initialize LittleFS and try to recover if mount fails.
     if(!LittleFS.begin()){
-        Serial.println("LittleFS mount failed, formatting...");
+        safeSerialPrintf("LittleFS mount failed, formatting...\n");
         LittleFS.format();
         if(!LittleFS.begin()){
-            Serial.println("LittleFS mount failed after format!");
+            safeSerialPrintf("LittleFS mount failed after format!\n");
         } else {
-            Serial.println("LittleFS mount succeeded after format.");
+            safeSerialPrintf("LittleFS mount succeeded after format.\n");
         }
     } else {
-        Serial.println("LittleFS mounted successfully.");
+        safeSerialPrintf("LittleFS mounted successfully.\n");
     }
 
     String macAddress = WiFi.macAddress();
@@ -140,32 +159,32 @@ void setup()
 
     dnsServer.start(53, "*", WiFi.softAPIP());
 
-    Serial.println("Setting up Webserver");
+    safeSerialPrintf("Setting up Webserver\n");
     webSetup();
-    Serial.println("Setting up Webserver - Done");
+    safeSerialPrintf("Setting up Webserver - Done\n");
 
     // Call initEspNowReceiver to initialize receiver functionality.
     initEspNowReceiver();
 
-    Serial.println("Create TaskWeb");
+    safeSerialPrintf("Create TaskWeb\n");
     delay(10);
     xTaskCreate(&TaskWeb, "TaskWeb", 8 * 1024, NULL, 5, NULL);
     delay(10);
-    Serial.println("Create TaskWeb - Done");
+    safeSerialPrintf("Create TaskWeb - Done\n");
     delay(10);
 
-    Serial.println("Create TaskOutputs");
+    safeSerialPrintf("Create TaskOutputs\n");
     delay(10);
     xTaskCreate(&TaskOutputs, "TaskOutputs", 8 * 1024, NULL, 5, NULL); // Now starting TaskOutputs
     delay(10);
-    Serial.println("Create TaskOutputs - Done");
+    safeSerialPrintf("Create TaskOutputs - Done\n");
 
     // Create new TaskPulseRelay to handle relay #8 pulsing.
-    Serial.println("Create TaskPulseRelay");
+    safeSerialPrintf("Create TaskPulseRelay\n");
     delay(10);
     xTaskCreate(&TaskPulseRelay, "TaskPulseRelay", 4 * 1024, NULL, 5, NULL);
     delay(10);
-    Serial.println("Create TaskPulseRelay - Done");
+    safeSerialPrintf("Create TaskPulseRelay - Done\n");
 }
 
 // Removed unused controlRelay function
@@ -182,7 +201,7 @@ void TaskWeb(void *pvParameters) // This is a task.
     TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
     const char *pcTaskName = pcTaskGetName(xTaskHandle);
 
-    Serial.println("TaskWeb is running");
+    safeSerialPrintf("TaskWeb is running\n");
     while (1) // A Task shall never return or exit.
     {
         webLoop();
@@ -197,7 +216,7 @@ void TaskWeb(void *pvParameters) // This is a task.
                 therefore now expect uxTaskGetStackHighWaterMark() to return a
                 value lower than when it was called on entering the task. */
             uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-            Serial.printf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
+            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
             lastExecutionTime = millis();
         }
     }
@@ -211,7 +230,7 @@ void TaskOutputs(void *pvParameters) // This is a task.
     TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
     const char *pcTaskName = pcTaskGetName(xTaskHandle);
 
-    Serial.println("TaskOutputs is running");
+    safeSerialPrintf("TaskOutputs is running\n");
     while (1) // A Task shall never return or exit.
     {
         uint32_t currentTime = millis();
@@ -253,7 +272,7 @@ void TaskOutputs(void *pvParameters) // This is a task.
         if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL)
         {
             uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-            Serial.printf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
+            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
             lastExecutionTime = millis();
         }
     }
@@ -266,7 +285,7 @@ void TaskPulseRelay(void *pvParameters)
     UBaseType_t uxHighWaterMark;
     TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
     const char *pcTaskName = pcTaskGetName(xTaskHandle);
-    Serial.println("TaskPulseRelay is running");
+    safeSerialPrintf("TaskPulseRelay is running\n");
     while(1)
     {
         uint32_t currentTime = millis();
@@ -283,7 +302,7 @@ void TaskPulseRelay(void *pvParameters)
         if(currentTime - lastExecutionTime >= REPORT_TASK_INTERVAL)
         {
             uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-            Serial.printf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
+            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
             lastExecutionTime = currentTime;
         }
     }
