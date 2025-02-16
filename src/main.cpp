@@ -1,7 +1,7 @@
 #undef SMOOTH_FONT
 
 #include <ShiftRegister74HC595.h>
-#include "configuration.h"  // Renamed include from pin_config.h
+#include "configuration.h" // Renamed include from pin_config.h
 #include <iostream>
 #include <memory>
 #include <Arduino.h>
@@ -13,8 +13,8 @@
 #include "ESPAsyncWebServer.h"
 #include <ESPUI.h>
 #include "configuration.h"
-#include "main.h" // Added include for initEspNowReceiver and relay control prototypes
-#include "Utilities.h"  // Added include for safeSerialPrintf and initialization
+#include "main.h"      // Added include for initEspNowReceiver and relay control prototypes
+#include "Utilities.h" // Added include for safeSerialPrintf and initialization
 
 #include "Web.h"
 #include <stdarg.h>
@@ -85,14 +85,16 @@ void setup()
 {
     // Use configuration values for reset.
     pinMode(RESET_PIN, OUTPUT);
-    digitalWrite(RESET_PIN, LOW);           // Set LOW to trigger reset
-    delay(RESET_LOW_DELAY_MS);              // Wait for reset to take effect
-    digitalWrite(RESET_PIN, HIGH);          // Set HIGH to end reset
+    digitalWrite(RESET_PIN, LOW);  // Set LOW to trigger reset
+    delay(RESET_LOW_DELAY_MS);     // Wait for reset to take effect
+    digitalWrite(RESET_PIN, HIGH); // Set HIGH to end reset
 
-    delay(SERIAL_MONITOR_DELAY_MS);         // Wait for the serial monitor to open
+    delay(SERIAL_MONITOR_DELAY_MS); // Wait for the serial monitor to open
 
     Serial.begin(921600); // Updated baud rate to match monitor_speed
-    initSafeSerial(); // Initialize safe serial printing (new)
+    initSafeSerial();     // Initialize safe serial printing (new)
+
+    NovaLogo();
 
     safeSerialPrintf("NOVA: MINI\n");
     safeSerialPrintf("setup() is running on core %d\n", xPortGetCoreID());
@@ -111,15 +113,21 @@ void setup()
     digitalWrite(HT74HC595_OUT_EN, LOW);
 
     // Initialize LittleFS and try to recover if mount fails.
-    if(!LittleFS.begin()){
+    if (!LittleFS.begin())
+    {
         safeSerialPrintf("LittleFS mount failed, formatting...\n");
         LittleFS.format();
-        if(!LittleFS.begin()){
+        if (!LittleFS.begin())
+        {
             safeSerialPrintf("LittleFS mount failed after format!\n");
-        } else {
+        }
+        else
+        {
             safeSerialPrintf("LittleFS mount succeeded after format.\n");
         }
-    } else {
+    }
+    else
+    {
         safeSerialPrintf("LittleFS mounted successfully.\n");
     }
 
@@ -134,6 +142,7 @@ void setup()
 
     AP_String = "NOVAMINI_" + AP_String.substring(0, 4);
     // your other setup stuff...
+    WiFi.mode(WIFI_AP_STA); // Ensure WiFi mode is set to WIFI_AP_STA
     WiFi.softAP(AP_String, "scubadandy");
     WiFi.setSleep(false); // Disable power saving on the wifi interface.
 
@@ -142,9 +151,6 @@ void setup()
     safeSerialPrintf("Setting up Webserver\n");
     webSetup();
     safeSerialPrintf("Setting up Webserver - Done\n");
-
-    // Call initEspNowReceiver to initialize receiver functionality.
-    initEspNowReceiver();
 
     safeSerialPrintf("Create TaskWeb\n");
     delay(10);
@@ -165,6 +171,23 @@ void setup()
     xTaskCreate(&TaskPulseRelay, "TaskPulseRelay", 4 * 1024, NULL, 5, NULL);
     delay(10);
     safeSerialPrintf("Create TaskPulseRelay - Done\n");
+
+    // Call initEspNowReceiver to initialize receiver functionality.
+    initEspNowReceiver();
+
+    // New: Print device information
+    Serial.println("Device Information:");
+    Serial.print("MAC Address: ");
+    Serial.println(WiFi.macAddress());
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+    Serial.print("Free Heap: ");
+    Serial.println(ESP.getFreeHeap());
+    // Added new stats
+    Serial.print("CPU Frequency (MHz): ");
+    Serial.println(ESP.getCpuFreqMHz());
+    Serial.print("SDK Version: ");
+    Serial.println(ESP.getSdkVersion());
 }
 
 // Removed unused controlRelay function
@@ -266,12 +289,12 @@ void TaskPulseRelay(void *pvParameters)
     TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
     const char *pcTaskName = pcTaskGetName(xTaskHandle);
     safeSerialPrintf("TaskPulseRelay is running\n");
-    while(1)
+    while (1)
     {
         uint32_t currentTime = millis();
         // Pulse relay #8 (index 7) on for 100 ms every second.
         static uint32_t lastPulse = 0;
-        if(currentTime - lastPulse >= 1000)
+        if (currentTime - lastPulse >= 1000)
         {
             triggerRelay(7, 100);
             lastPulse = currentTime;
@@ -279,7 +302,7 @@ void TaskPulseRelay(void *pvParameters)
         yield();
         delay(1);
         static uint32_t lastExecutionTime = 0;
-        if(currentTime - lastExecutionTime >= REPORT_TASK_INTERVAL)
+        if (currentTime - lastExecutionTime >= REPORT_TASK_INTERVAL)
         {
             uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
             safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());

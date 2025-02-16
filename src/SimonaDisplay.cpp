@@ -11,15 +11,8 @@ void displaySimonaStageWaiting(const SimonaMessage &msg)
 {
     if (1)
     {
-        safeSerialPrintf("Stage: SIMONA_STAGE_WAITING\n");
-        safeSerialPrintf("Message contents:\n");
-        safeSerialPrintf("  message_id: %d\n", msg.message_id);
-        safeSerialPrintf("  stage: SIMONA_STAGE_WAITING\n");
-        safeSerialPrintf("  level: %d\n", msg.level);
-        safeSerialPrintf("  gamePlay: %d\n", msg.gamePlay);
-        safeSerialPrintf("  lost: %d\n", msg.lost);
-        safeSerialPrintf("  litButton: %d\n", msg.litButton);
-        safeSerialPrintf("  lastPressedButton: %d\n", msg.lastPressedButton);
+        safeSerialPrintf("Stage: SIMONA_STAGE_WAITING\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_WAITING\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
+                         msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
 }
 
@@ -31,15 +24,8 @@ void displaySimonaStageSequenceGeneration(const SimonaMessage &msg)
 {
     if (1)
     {
-        safeSerialPrintf("Stage: SIMONA_STAGE_SEQUENCE_GENERATION\n");
-        safeSerialPrintf("Message contents:\n");
-        safeSerialPrintf("  message_id: %d\n", msg.message_id);
-        safeSerialPrintf("  stage: SIMONA_STAGE_SEQUENCE_GENERATION\n");
-        safeSerialPrintf("  level: %d\n", msg.level);
-        safeSerialPrintf("  gamePlay: %d\n", msg.gamePlay);
-        safeSerialPrintf("  lost: %d\n", msg.lost);
-        safeSerialPrintf("  litButton: %d\n", msg.litButton);
-        safeSerialPrintf("  lastPressedButton: %d\n", msg.lastPressedButton);
+        safeSerialPrintf("Stage: SIMONA_STAGE_SEQUENCE_GENERATION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_SEQUENCE_GENERATION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
+                         msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
 }
 
@@ -51,15 +37,8 @@ void displaySimonaStageTransition(const SimonaMessage &msg)
 {
     if (1)
     {
-        safeSerialPrintf("Stage: SIMONA_STAGE_TRANSITION\n");
-        safeSerialPrintf("Message contents:\n");
-        safeSerialPrintf("  message_id: %d\n", msg.message_id);
-        safeSerialPrintf("  stage: SIMONA_STAGE_TRANSITION\n");
-        safeSerialPrintf("  level: %d\n", msg.level);
-        safeSerialPrintf("  gamePlay: %d\n", msg.gamePlay);
-        safeSerialPrintf("  lost: %d\n", msg.lost);
-        safeSerialPrintf("  litButton: %d\n", msg.litButton);
-        safeSerialPrintf("  lastPressedButton: %d\n", msg.lastPressedButton);
+        safeSerialPrintf("Stage: SIMONA_STAGE_TRANSITION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_TRANSITION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
+                         msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
 }
 
@@ -71,15 +50,8 @@ void displaySimonaStageInputCollection(const SimonaMessage &msg)
 {
     if (1)
     {
-        safeSerialPrintf("Stage: SIMONA_STAGE_INPUT_COLLECTION\n");
-        safeSerialPrintf("Message contents:\n");
-        safeSerialPrintf("  message_id: %d\n", msg.message_id);
-        safeSerialPrintf("  stage: SIMONA_STAGE_INPUT_COLLECTION\n");
-        safeSerialPrintf("  level: %d\n", msg.level);
-        safeSerialPrintf("  gamePlay: %d\n", msg.gamePlay);
-        safeSerialPrintf("  lost: %d\n", msg.lost);
-        safeSerialPrintf("  litButton: %d\n", msg.litButton);
-        safeSerialPrintf("  lastPressedButton: %d\n", msg.lastPressedButton);
+        safeSerialPrintf("Stage: SIMONA_STAGE_INPUT_COLLECTION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_INPUT_COLLECTION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
+                         msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
 }
 
@@ -91,15 +63,8 @@ void displaySimonaStageVerification(const SimonaMessage &msg)
 {
     if (1)
     {
-        safeSerialPrintf("Stage: SIMONA_STAGE_VERIFICATION\n");
-        safeSerialPrintf("Message contents:\n");
-        safeSerialPrintf("  message_id: %d\n", msg.message_id);
-        safeSerialPrintf("  stage: SIMONA_STAGE_VERIFICATION\n");
-        safeSerialPrintf("  level: %d\n", msg.level);
-        safeSerialPrintf("  gamePlay: %d\n", msg.gamePlay);
-        safeSerialPrintf("  lost: %d\n", msg.lost);
-        safeSerialPrintf("  litButton: %d\n", msg.litButton);
-        safeSerialPrintf("  lastPressedButton: %d\n", msg.lastPressedButton);
+        safeSerialPrintf("Stage: SIMONA_STAGE_VERIFICATION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_VERIFICATION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
+                         msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
 }
 
@@ -111,15 +76,8 @@ void displaySimonaStageGameLost(const SimonaMessage &msg)
 {
     if (1)
     {
-        safeSerialPrintf("Stage: SIMONA_STAGE_GAME_LOST\n");
-        safeSerialPrintf("Message contents:\n");
-        safeSerialPrintf("  message_id: %d\n", msg.message_id);
-        safeSerialPrintf("  stage: SIMONA_STAGE_GAME_LOST\n");
-        safeSerialPrintf("  level: %d\n", msg.level);
-        safeSerialPrintf("  gamePlay: %d\n", msg.gamePlay);
-        safeSerialPrintf("  lost: %d\n", msg.lost);
-        safeSerialPrintf("  litButton: %d\n", msg.litButton);
-        safeSerialPrintf("  lastPressedButton: %d\n", msg.lastPressedButton);
+        safeSerialPrintf("Stage: SIMONA_STAGE_GAME_LOST\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_GAME_LOST\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
+                         msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
 }
 
@@ -131,15 +89,8 @@ void displaySimonaStageGameWin(const SimonaMessage &msg)
 {
     if (1)
     {
-        safeSerialPrintf("Stage: SIMONA_STAGE_GAME_WIN\n");
-        safeSerialPrintf("Message contents:\n");
-        safeSerialPrintf("  message_id: %d\n", msg.message_id);
-        safeSerialPrintf("  stage: SIMONA_STAGE_GAME_WIN\n");
-        safeSerialPrintf("  level: %d\n", msg.level);
-        safeSerialPrintf("  gamePlay: %d\n", msg.gamePlay);
-        safeSerialPrintf("  lost: %d\n", msg.lost);
-        safeSerialPrintf("  litButton: %d\n", msg.litButton);
-        safeSerialPrintf("  lastPressedButton: %d\n", msg.lastPressedButton);
+        safeSerialPrintf("Stage: SIMONA_STAGE_GAME_WIN\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_GAME_WIN\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
+                         msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
 }
 
@@ -151,14 +102,7 @@ void displaySimonaStageReset(const SimonaMessage &msg)
 {
     if (1)
     {
-        safeSerialPrintf("Stage: SIMONA_STAGE_RESET\n");
-        safeSerialPrintf("Message contents:\n");
-        safeSerialPrintf("  message_id: %d\n", msg.message_id);
-        safeSerialPrintf("  stage: SIMONA_STAGE_RESET\n");
-        safeSerialPrintf("  level: %d\n", msg.level);
-        safeSerialPrintf("  gamePlay: %d\n", msg.gamePlay);
-        safeSerialPrintf("  lost: %d\n", msg.lost);
-        safeSerialPrintf("  litButton: %d\n", msg.litButton);
-        safeSerialPrintf("  lastPressedButton: %d\n", msg.lastPressedButton);
+        safeSerialPrintf("Stage: SIMONA_STAGE_RESET\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_RESET\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
+                         msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
 }

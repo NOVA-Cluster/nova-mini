@@ -5,5 +5,6 @@
 
 void initSafeSerial();
 void safeSerialPrintf(const char* format, ...);
+void NovaLogo();
 
 #endif // UTILITIES_H
