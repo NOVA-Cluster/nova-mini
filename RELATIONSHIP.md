@@ -1,18 +1,28 @@
 # Relationship between Nova Mini and Nova Mini Remote
 
-**Nova Mini (Receiver):**
-- Acts as an ESPNOW receiver.
-- Listens for incoming PooferMessage commands via ESPNOW.
-- Triggers actions (e.g., relay operations and LED effects) based on the received message.
-- Sends an acknowledgment (ACK) back to the sender using ESPNOW.
+## Overview
+This document describes how Nova Mini and Nova Mini Remote interact, focusing on the updated game mode and control flow.
 
-**Nova Mini Remote (Sender):**
-- Provides a user interface to send control commands.
-- Transmits commands over the network (e.g., HTTP requests) to Nova Mini.
-- Allows remote control of Nova Mini's functionalities.
+## Device Roles
 
-**How They Work Together:**
-1. The Nova Mini Remote sends a command (like triggering a relay or changing modes) over the network.
-2. Nova Mini, acting as the receiver, listens for these commands on its web server or other endpoints.
-3. Once a command is received, Nova Mini executes the corresponding action, updating its hardware status and web interface.
-4. This integration enables remote operation of the Nova Mini device.
+### Nova Mini (Receiver)
+- Serves as the hardware controller.
+- Monitors game inputs and executes game logic.
+- Provides LED and buzzer feedback based on game state changes.
+
+### Nova Mini Remote (Sender)
+- Offers a user interface to initiate and control the game.
+- Sends local game commands to Nova Mini.
+- Updates the game state through real-time interactions.
+
+## Game Mode Enhancements
+- The Nova Mini Remote now features an enhanced game mode with improved state management.
+- The legacy resetGame() function has been removed.
+- A dedicated reset stage (SIMONA_STAGE_RESET) replaces former reset logic and is activated via remote button presses.
+- SimonaMessage is used to communicate game stages, levels, and user inputs in real time, ensuring clear feedback and responsive control.
+
+## Workflow
+1. Nova Mini Remote issues a game command (e.g., start a new round or reset the game).
+2. Nova Mini receives the command, processes it, and updates its game state.
+3. SimonaMessage coordinates feedback by triggering appropriate LED, buzzer, and button responses.
+4. Together, these interactions create an engaging, interactive game experience.
