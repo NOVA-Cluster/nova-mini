@@ -171,10 +171,37 @@ void displaySimonaStageGameLostAnimation()
     }
 }
 
-// New function for LED_GAME_WIN state
+// Replace displaySimonaStageGameWinAnimation with the following:
 void displaySimonaStageGameWinAnimation()
 {
-    // TODO: implement game win animation
+    // Configurable total duration in ms (default 2000ms)
+    const TickType_t totalDuration = 2000 / portTICK_PERIOD_MS;
+    // Number of pulses and steps per pulse for a high-energy effect
+    const int pulses = 4;
+    const int stepsPerPulse = 10;
+    const TickType_t delayPerStep = totalDuration / (pulses * stepsPerPulse);
+
+    // Define win color as purple
+    CRGB winColor = CRGB(255, 100, 255);
+
+    // High-energy win animation: multiple pulses using a sine function for smooth brightness transitions.
+    for (int pulse = 0; pulse < pulses; pulse++)
+    {
+        for (int step = 0; step <= stepsPerPulse; step++)
+        {
+            float fraction = step / (float)stepsPerPulse;
+            // Sine curve for a quick pulse (0->1->0)
+            float brightnessFactor = sinf(fraction * 3.14159f);
+            for (int i = 0; i < NUM_LEDS_FOR_TEST; i++)
+            {
+                leds[i].r = (uint8_t)(winColor.r * brightnessFactor);
+                leds[i].g = (uint8_t)(winColor.g * brightnessFactor);
+                leds[i].b = (uint8_t)(winColor.b * brightnessFactor);
+            }
+            FastLED.show();
+            vTaskDelay(delayPerStep);
+        }
+    }
 }
 
 // New function for LED_RESET state
