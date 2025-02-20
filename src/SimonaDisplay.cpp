@@ -1,7 +1,8 @@
 #include "SimonaDisplay.h"
 #include "SimonaTypes.h" // For stage definitions if needed
 #include <Arduino.h>
-#include "main.h" // Added for safeSerialPrintf
+#include "main.h" // Added to import LEDAnimationState and currentLEDAnimationState
+#include "SimonaDisplaySequences.h" // For LED animations
 
 /*
  * displaySimonaStageWaiting
@@ -14,6 +15,7 @@ void displaySimonaStageWaiting(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_WAITING\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_WAITING\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLEDAnimationState = LED_WAITING;
 }
 
 /*
@@ -27,6 +29,7 @@ void displaySimonaStageSequenceGeneration(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_SEQUENCE_GENERATION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_SEQUENCE_GENERATION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLEDAnimationState = LED_SEQUENCE_GENERATION;
 }
 
 /*
@@ -40,6 +43,7 @@ void displaySimonaStageTransition(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_TRANSITION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_TRANSITION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLEDAnimationState = LED_TRANSITION;
 }
 
 /*
@@ -53,6 +57,7 @@ void displaySimonaStageInputCollection(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_INPUT_COLLECTION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_INPUT_COLLECTION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLEDAnimationState = LED_INPUT_COLLECTION;
 }
 
 /*
@@ -66,6 +71,7 @@ void displaySimonaStageVerification(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_VERIFICATION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_VERIFICATION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLEDAnimationState = LED_VERIFICATION;
 }
 
 /*
@@ -79,6 +85,7 @@ void displaySimonaStageGameLost(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_GAME_LOST\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_GAME_LOST\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLEDAnimationState = LED_GAME_LOST;
 }
 
 /*
@@ -92,6 +99,7 @@ void displaySimonaStageGameWin(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_GAME_WIN\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_GAME_WIN\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLEDAnimationState = LED_GAME_WIN;
 }
 
 /*
@@ -105,4 +113,5 @@ void displaySimonaStageReset(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_RESET\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_RESET\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLEDAnimationState = LED_RESET;
 }

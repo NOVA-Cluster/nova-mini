@@ -1,5 +1,3 @@
-#undef SMOOTH_FONT
-
 #include <ShiftRegister74HC595.h>
 #include "configuration.h" // Renamed include from pin_config.h
 #include <iostream>
@@ -13,12 +11,16 @@
 #include "ESPAsyncWebServer.h"
 #include <ESPUI.h>
 #include "configuration.h"
-#include "main.h"      // Added include for initEspNowReceiver and relay control prototypes
-#include "Utilities.h" // Added include for safeSerialPrintf and initialization
+#include "main.h"                   // Added include for initEspNowReceiver and relay control prototypes
+#include "Utilities.h"              // Added include for safeSerialPrintf and initialization
+#include <FastLED.h>                // Added support for SM16703 using FastLED
+#include "SimonaDisplaySequences.h" // New include for LED animation sequences
 
 #include "Web.h"
 #include <stdarg.h>
-#include "freertos/semphr.h"
+#include "freertos/semphr.h"  // Corrected include directive
+
+#include "Tasks.h" // New include for task declarations
 
 // Define the number of 74HC595 chips in cascade
 // Removed: const uint8_t NUMBER_OF_SHIFT_REGISTERS = 1;
@@ -29,6 +31,7 @@ ShiftRegister74HC595<NUMBER_OF_SHIFT_REGISTERS> sr(HT74HC595_DATA, HT74HC595_CLO
 void TaskWeb(void *pvParameters);
 void TaskOutputs(void *pvParameters);
 void TaskPulseRelay(void *pvParameters);
+void TaskFastLED(void *pvParameters); // New task for SM16703 LED control using FastLED
 
 DNSServer dnsServer;
 AsyncWebServer webServer(80);
@@ -37,15 +40,6 @@ AsyncWebServer webServer(80);
 // Removed: const uint32_t MAX_RELAY_DURATION = 250;
 
 // Updated non-blocking relay control implementation
-struct RelayTask
-{
-    bool active;
-    bool longActive; // New flag for long duration events.
-    uint32_t offTime;
-    uint32_t startTime; // New field to record when the relay was turned on
-};
-const int NUM_RELAYS = 8;
-RelayTask relayTasks[NUM_RELAYS] = {{false, false, 0, 0}};
 
 // Function to trigger a relay for a specified duration (in ms), clamped by MAX_RELAY_DURATION.
 void triggerRelay(int channel, int duration)
@@ -80,6 +74,9 @@ void disableRelay(int channel)
     sr.set(channel, LOW);
     relayTasks[channel].active = false;
 }
+
+#define NUM_LEDS_FOR_TEST 4   // Number of LEDs for testing
+CRGB leds[NUM_LEDS_FOR_TEST]; // LED array for SM16703
 
 void setup()
 {
@@ -175,6 +172,13 @@ void setup()
     // Call initEspNowReceiver to initialize receiver functionality.
     initEspNowReceiver();
 
+    // Initialize FastLED for SM16703 LED support
+    FastLED.addLeds<SM16703, LED_PIN_FASTLED, RGB>(leds, NUM_LEDS_FOR_TEST);
+
+    // Create new TaskFastLED for SM16703 control
+    safeSerialPrintf("Create TaskFastLED\n");
+    xTaskCreate(&TaskFastLED, "TaskFastLED", 4 * 1024, NULL, 5, NULL);
+
     // New: Print device information
     Serial.println("Device Information:");
     Serial.print("MAC Address: ");
@@ -197,116 +201,5 @@ void loop()
     // Do nothing in here. Everything must be in Tasks.
 }
 
-void TaskWeb(void *pvParameters) // This is a task.
-{
-    (void)pvParameters;
-    UBaseType_t uxHighWaterMark;
-    TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
-    const char *pcTaskName = pcTaskGetName(xTaskHandle);
-
-    safeSerialPrintf("TaskWeb is running\n");
-    while (1) // A Task shall never return or exit.
-    {
-        webLoop();
-
-        yield(); // Should't do anything but it's here incase the watchdog needs it.
-        delay(1);
-
-        static uint32_t lastExecutionTime = 0;
-        if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL)
-        {
-            /* Calling the function will have used some stack space, we would
-                therefore now expect uxTaskGetStackHighWaterMark() to return a
-                value lower than when it was called on entering the task. */
-            uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
-            lastExecutionTime = millis();
-        }
-    }
-}
-
-// Updated TaskOutputs using non blocking delays.
-void TaskOutputs(void *pvParameters) // This is a task.
-{
-    (void)pvParameters;
-    UBaseType_t uxHighWaterMark;
-    TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
-    const char *pcTaskName = pcTaskGetName(xTaskHandle);
-
-    safeSerialPrintf("TaskOutputs is running\n");
-    while (1) // A Task shall never return or exit.
-    {
-        uint32_t currentTime = millis();
-        // Turn off any relays whose duration has elapsed or exceed maximum allowed time.
-        for (int i = 0; i < NUM_RELAYS; i++)
-        {
-            if (relayTasks[i].active)
-            {
-                // For longActive relays, only offTime matters.
-                if (relayTasks[i].longActive)
-                {
-                    if (currentTime >= relayTasks[i].offTime)
-                    {
-                        sr.set(i, LOW);
-                        relayTasks[i].active = false;
-                    }
-                }
-                else
-                {
-                    // For normal pulses, enforce MAX_RELAY_DURATION.
-                    if (currentTime >= relayTasks[i].offTime ||
-                        (currentTime - relayTasks[i].startTime) >= MAX_RELAY_DURATION)
-                    {
-                        sr.set(i, LOW);
-                        relayTasks[i].active = false;
-                    }
-                }
-            }
-        }
-
-        // ... Code to process incoming relay messages ...
-        // For example, to simulate turning on relay 1 for 50 ms, uncomment:
-        // triggerRelay(1, 50);
-
-        yield(); // let other tasks run
-        delay(1);
-
-        static uint32_t lastExecutionTime = 0;
-        if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL)
-        {
-            uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
-            lastExecutionTime = millis();
-        }
-    }
-}
-
-// New task to pulse relay #8 every second.
-void TaskPulseRelay(void *pvParameters)
-{
-    (void)pvParameters;
-    UBaseType_t uxHighWaterMark;
-    TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
-    const char *pcTaskName = pcTaskGetName(xTaskHandle);
-    safeSerialPrintf("TaskPulseRelay is running\n");
-    while (1)
-    {
-        uint32_t currentTime = millis();
-        // Pulse relay #8 (index 7) on for 100 ms every second.
-        static uint32_t lastPulse = 0;
-        if (currentTime - lastPulse >= 1000)
-        {
-            triggerRelay(7, 100);
-            lastPulse = currentTime;
-        }
-        yield();
-        delay(1);
-        static uint32_t lastExecutionTime = 0;
-        if (currentTime - lastExecutionTime >= REPORT_TASK_INTERVAL)
-        {
-            uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
-            lastExecutionTime = currentTime;
-        }
-    }
-}
+// Removed task definitions (TaskWeb, TaskOutputs, TaskPulseRelay, TaskFastLED)
+// They have been moved to Tasks.cpp

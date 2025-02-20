@@ -26,3 +26,5 @@
 #define RESET_LOW_DELAY_MS 50
 
 #define REPORT_TASK_INTERVAL (120 * 1000) // How often to report task status in milliseconds
+
+#define LED_PIN_FASTLED 8  // Use GPIO8 for FastLED LEDs

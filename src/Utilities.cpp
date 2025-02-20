@@ -38,42 +38,56 @@ void printFWithIndent(int indent, const __FlashStringHelper* str) {
     Serial.println(str);
 }
 
-void NovaLogo() {
-    printFWithIndent(0, F(""));
-    printFWithIndent(32, F("........"));
-    printFWithIndent(28, F("..::--==+++++==--:.."));
-    printFWithIndent(27, F(":-=++++==-:::::::---."));
-    printFWithIndent(25, F(":=++=-:.:-=+**#####***+-:"));
-    printFWithIndent(22, F(".:++-::-+#%%%#*+==------=+***-."));
-    printFWithIndent(21, F(".-+::=*%%#+-:.   ...:::::....:=-."));
-    printFWithIndent(20, F(":::+%%+-.   :-=*##%%%%@%%%%#*=:.."));
-    printFWithIndent(21, F(".+%#-.  :=*%%%%%#+==------=+*%%#-"));
-    printFWithIndent(20, F(".*%-  :=#@@#*=:.     ......    :+%-"));
-    printFWithIndent(20, F("=#. :+%@#=:.   .-=+*########*+-. :="));
-    printFWithIndent(20, F("=. =@@*:.  .-+#@@%%##*++++**#%@%=..."));
-    printFWithIndent(20, F("..+@#:  .-*%@%*+-:.          .-*@+"));
-    printFWithIndent(21, F(":@#.  -#@@*-.   .:=++****+=:. .+#."));
-    printFWithIndent(21, F(":%: .+@@+.  .:+#%%%%##**#%%@%- ::"));
-    printFWithIndent(21, F(".-:.+@%:  .=#@%*=-.      .:+@%."));
-    printFWithIndent(22, F("...*@-  :#@%=:  .-+**#*=. .#*."));
-    printFWithIndent(25, F(":#-. *@#.  :*%%*+=+@@=.-=."));
-    printFWithIndent(26, F(".-..+@*.  #@%:..:=#+..."));
-    printFWithIndent(28, F(". .-+=:.:+*+==--. ."));
-    printFWithIndent(33, F(".... ...."));
-    printFWithIndent(0, F(""));
-    printFWithIndent(0, F(""));
-    printFWithIndent(2, F("...       ...      ..::---:::.        .-.         ::         .."));
-    printFWithIndent(2, F(".+=       :+.    .-===-----====:      .**        :#-         =#."));
-    printFWithIndent(2, F(".*%=.     -*.  .=*=:..      ..-++.     :%-       +*.        .##+"));
-    printFWithIndent(2, F(".+=+:     -*.  -+.             .=*:     **.     :%:        .*+.%-"));
-    printFWithIndent(2, F(".*=..     -*.  ..                -#.    :%-     *+         -#. =#."));
-    printFWithIndent(2, F(".*=       -*.                     *=    .*#.   -#.        .#=  .#+"));
-    printFWithIndent(2, F(".*=       -*.                     =+     :%-  .#=         =*.   :%:"));
-    printFWithIndent(2, F(".*=       -*.                     *=      *#. =#.        :%:    .+*."));
-    printFWithIndent(2, F(".*=     ..-*.                    -#.      :#:.#-        .*+ .:.  .%="));
-    printFWithIndent(2, F(".*=     :+=*.                  .=*:       .:.=*.        =#. .#-   -%:"));
-    printFWithIndent(2, F(".*=     .-%*.      ...     ...-+=.          :#:        .#-   =*.  .**."));
-    printFWithIndent(2, F(".+-       =*.      :+=-----==+-.            =+        .+*.   .#-   :#-"));
-    printFWithIndent(2, F("..       ...       .::----:.               ..        .:.     :."));
+// New structure to hold each logo line's indent value and text.
+struct FSLine {
+    int indent;
+    const __FlashStringHelper* line;
+};
 
+// Optimized NovaLogo: uses a table of FSLine entries for reduced code repetition.
+void NovaLogo() {
+    // Define the logo lines in a static array.
+    static const FSLine logoLines[] = {
+        {0, F("")},
+        {32, F("........")},
+        {28, F("..::--==+++++==--:..")},
+        {27, F(":-=++++==-:::::::---.")},
+        {25, F(":=++=-:.:-=+**#####***+-:")},
+        {22, F(".:++-::-+#%%%#*+==------=+***-.")},
+        {21, F(".-+::=*%%#+-:.   ...:::::....:=-.")},
+        {20, F(":::+%%+-.   :-=*##%%%%@%%%%#*=:..")},
+        {21, F(".+%#-.  :=*%%%%%#+==------=+*%%#-")},
+        {20, F(".*%-  :=#@@#*=:.     ......    :+%-")},
+        {20, F("=#. :+%@#=:.   .-=+*########*+-. :=")},
+        {20, F("=. =@@*:.  .-+#@@%%##*++++**#%@%=...")},
+        {20, F("..+@#:  .-*%@%*+-:.          .-*@+")},
+        {21, F(":@#.  -#@@*-.   .:=++****+=:. .+#.")},
+        {21, F(":%: .+@@+.  .:+#%%%%##**#%%@%- ::")},
+        {21, F(".-:.+@%:  .=#@%*=-.      .:+@%.")},
+        {22, F("...*@-  :#@%=:  .-+**#*=. .#*.")},
+        {25, F(":#-. *@#.  :*%%*+=+@@=.-=.")},
+        {26, F(".-..+@*.  #@%:..:=#+...")},
+        {28, F(". .-+=:.:+*+==--. .")},
+        {33, F(".... ....")},
+        {0, F("")},
+        {0, F("")},
+        {2, F("...       ...      ..::---:::.        .-.         ::         ..")},
+        {2, F(".+=       :+.    .-===-----====:      .**        :#-         =#.")},
+        {2, F(".*%=.     -*.  .=*=:..      ..-++.     :%-       +*.        .##+")},
+        {2, F(".+=+:     -*.  -+.             .=*:     **.     :%:        .*+.%-")},
+        {2, F(".*=..     -*.  ..                -#.    :%-     *+         -#. =#.")},
+        {2, F(".*=       -*.                     *=    .*#.   -#.        .#=  .#+")},
+        {2, F(".*=       -*.                     =+     :%-  .#=         =*.   :%:")},
+        {2, F(".*=       -*.                     *=      *#. =#.        :%:    .+*.")},
+        {2, F(".*=     ..-*.                    -#.      :#:.#-        .*+ .:.  .%=")},
+        {2, F(".*=     :+=*.                  .=*:       .:.=*.        =#. .#-   -%:")},
+        {2, F(".*=     .-%*.      ...     ...-+=.          :#:        .#-   =*.  .**.")},
+        {2, F(".+-       =*.      :+=-----==+-.            =+        .+*.   .#-   :#-")},
+        {2, F("..       ...       .::----:.               ..        .:.     :.")}
+    };
+
+    // Iterate over the array to print each line.
+    for (unsigned i = 0; i < sizeof(logoLines) / sizeof(logoLines[0]); i++) {
+        printFWithIndent(logoLines[i].indent, logoLines[i].line);
+    }
 }
