@@ -116,11 +116,29 @@ void TaskFastLED(void *pvParameters)
             case LED_WAITING:
                 displaySimonaStageWaitingAnimation();
                 break;
-            case LED_INPUT_COLLECTION:  // mapped from LED_PLAYING
-                displaySimonaStageReadyAnimation();
+            case LED_SEQUENCE_GENERATION:
+                displaySimonaStageSequenceGenerationAnimation();
                 break;
-            case LED_GAME_LOST: // mapped from LED_GAMEOVER
-                displaySimonaStagePlayingAnimation();
+            case LED_TRANSITION:
+                displaySimonaStageTransitionAnimation();
+                break;
+            case LED_INPUT_COLLECTION:
+                displaySimonaStageInputCollectionAnimation();
+                break;
+            case LED_VERIFICATION:
+                displaySimonaStageVerificationAnimation();
+                break;
+            case LED_GAME_LOST:
+                displaySimonaStageGameLostAnimation();
+                break;
+            case LED_GAME_WIN:
+                displaySimonaStageGameWinAnimation();
+                break;
+            case LED_RESET:
+                displaySimonaStageResetAnimation();
+                break;
+            default:
+                // ...existing default code...
                 break;
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);

@@ -1,9 +1,14 @@
 #ifndef SIMONADISPLAYSEQUENCES_H
 #define SIMONADISPLAYSEQUENCES_H
 
+// Declare animation functions for new LED states.
+void displaySimonaStageSequenceGenerationAnimation();
+void displaySimonaStageTransitionAnimation();
+void displaySimonaStageInputCollectionAnimation();
+void displaySimonaStageVerificationAnimation();
+void displaySimonaStageGameLostAnimation();
+void displaySimonaStageGameWinAnimation();
+void displaySimonaStageResetAnimation();
 void displaySimonaStageWaitingAnimation();
-void displaySimonaStageReadyAnimation();
-void displaySimonaStagePlayingAnimation();
-void displaySimonaStageGameOverAnimation();
 
 #endif // SIMONADISPLAYSEQUENCES_H
