@@ -4,6 +4,8 @@
 #include "main.h" // Added to import LEDAnimationState and currentLEDAnimationState
 #include "SimonaDisplaySequences.h" // For LED animations
 
+extern int currentLitButton; // Add extern declaration so currentLitButton is visible
+
 /*
  * displaySimonaStageWaiting
  * Shows that the game is in the WAITING stage, where no player action has been taken yet.
@@ -30,6 +32,7 @@ void displaySimonaStageSequenceGeneration(const SimonaMessage &msg)
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
     currentLEDAnimationState = LED_SEQUENCE_GENERATION;
+    currentLitButton = msg.litButton;
 }
 
 /*

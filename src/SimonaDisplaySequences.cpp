@@ -11,6 +11,8 @@ extern CRGB leds[];
 #define NUM_LEDS_FOR_TEST 4
 #endif
 
+extern int currentLitButton; // Declare the global variable for use in this file
+
 void displaySimonaStageWaitingAnimation()
 {
     const int steps = 10;
@@ -101,10 +103,55 @@ void displaySimonaStageWaitingAnimation()
     }
 }
 
-// New function for LED_SEQUENCE_GENERATION state
+// Replace displaySimonaStageSequenceGenerationAnimation with the following:
 void displaySimonaStageSequenceGenerationAnimation()
 {
-    // TODO: implement sequence generation animation
+    extern int currentLitButton; // Declare external variable
+    int button = currentLitButton; // default value if undefined may be 0
+
+    CRGB targetColor;
+    switch(button)
+    {
+        case 0: targetColor = CRGB(255, 0, 0);   break; // red
+        case 1: targetColor = CRGB(0, 255, 0);   break; // green
+        case 2: targetColor = CRGB(0, 0, 255);   break; // blue
+        case 3: targetColor = CRGB(255, 255, 0); break; // yellow
+        default: targetColor = CRGB(255, 0, 0);  break; // fallback to red
+    }
+
+    // Breathing animation for 2 seconds total
+    const TickType_t totalDuration = 250 / portTICK_PERIOD_MS;
+    const int steps = 20;
+    const TickType_t delayPerStep = totalDuration / (steps * 2); // fade in and fade out
+
+    // Fade in
+    for (int step = 0; step <= steps; step++)
+    {
+        if (currentLEDAnimationState != LED_SEQUENCE_GENERATION)
+            return;
+        float t = step / (float)steps;
+        fill_solid(leds, NUM_LEDS_FOR_TEST, CRGB(
+            (uint8_t)(targetColor.r * t),
+            (uint8_t)(targetColor.g * t),
+            (uint8_t)(targetColor.b * t)
+        ));
+        FastLED.show();
+        vTaskDelay(delayPerStep);
+    }
+    // Fade out
+    for (int step = 0; step <= steps; step++)
+    {
+        if (currentLEDAnimationState != LED_SEQUENCE_GENERATION)
+            return;
+        float t = 1.0f - (step / (float)steps);
+        fill_solid(leds, NUM_LEDS_FOR_TEST, CRGB(
+            (uint8_t)(targetColor.r * t),
+            (uint8_t)(targetColor.g * t),
+            (uint8_t)(targetColor.b * t)
+        ));
+        FastLED.show();
+        vTaskDelay(delayPerStep);
+    }
 }
 
 // New function for LED_TRANSITION state
