@@ -109,8 +109,12 @@ void TaskPulseRelay(void *pvParameters)
 // TaskFastLED definition
 void TaskFastLED(void *pvParameters)
 {
-    // ...existing code from TaskFastLED...
+    UBaseType_t uxHighWaterMark;
+    TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
+    const char *pcTaskName = pcTaskGetName(xTaskHandle);
     safeSerialPrintf("TaskFastLED is running\n");
+    
+    uint32_t lastExecutionTime = 0; // new watermark timer
     for (;;) {
         switch (currentLEDAnimationState) {
             case LED_WAITING:
@@ -140,6 +144,11 @@ void TaskFastLED(void *pvParameters)
             default:
                 // ...existing default code...
                 break;
+        }
+        if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL) {
+            uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
+            lastExecutionTime = millis();
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }

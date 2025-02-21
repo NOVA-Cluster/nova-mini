@@ -78,7 +78,9 @@ void disableRelay(int channel)
 #define NUM_LEDS_FOR_TEST 4   // Number of LEDs for testing
 CRGB leds[NUM_LEDS_FOR_TEST]; // LED array for SM16703
 
-int currentLitButton = 0; // Global definition for currentLitButton
+// Global variable definitions
+int currentLitButton = 0;
+int currentLastPressedButton = 0; // added definition for msg.lastPressedButton used in animations
 
 void setup()
 {

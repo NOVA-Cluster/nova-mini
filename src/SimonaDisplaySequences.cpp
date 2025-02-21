@@ -119,60 +119,31 @@ void displaySimonaStageSequenceGenerationAnimation()
         default: targetColor = CRGB(255, 0, 0);  break; // fallback to red
     }
 
-    // Breathing animation for 2 seconds total
-    const TickType_t totalDuration = 250 / portTICK_PERIOD_MS;
-    const int steps = 20;
-    const TickType_t delayPerStep = totalDuration / (steps * 2); // fade in and fade out
+    const uint8_t offVal = 8; // 3% of 255 ≈ 8
+    CRGB offWhite = CRGB(offVal, offVal, offVal);
 
-    // Fade in
-    for (int step = 0; step <= steps; step++)
-    {
-        if (currentLEDAnimationState != LED_SEQUENCE_GENERATION)
-            return;
-        float t = step / (float)steps;
-        fill_solid(leds, NUM_LEDS_FOR_TEST, CRGB(
-            (uint8_t)(targetColor.r * t),
-            (uint8_t)(targetColor.g * t),
-            (uint8_t)(targetColor.b * t)
-        ));
-        FastLED.show();
-        vTaskDelay(delayPerStep);
-    }
-    // Fade out
-    for (int step = 0; step <= steps; step++)
-    {
-        if (currentLEDAnimationState != LED_SEQUENCE_GENERATION)
-            return;
-        float t = 1.0f - (step / (float)steps);
-        fill_solid(leds, NUM_LEDS_FOR_TEST, CRGB(
-            (uint8_t)(targetColor.r * t),
-            (uint8_t)(targetColor.g * t),
-            (uint8_t)(targetColor.b * t)
-        ));
-        FastLED.show();
-        vTaskDelay(delayPerStep);
-    }
+    // Turn on the selected color
+    fill_solid(leds, NUM_LEDS_FOR_TEST, targetColor);
+    FastLED.show();
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+
+    // Bring it back to the 5% white for 'off'
+    fill_solid(leds, NUM_LEDS_FOR_TEST, offWhite);
+    FastLED.show();
 }
 
 // New function for LED_TRANSITION state
 void displaySimonaStageTransitionAnimation()
-{
-    // TODO: implement transition animation
-}
-
-// Replace displaySimonaStageInputCollectionAnimation with the following:
-
-void displaySimonaStageInputCollectionAnimation()
 {
     const int steps = 20;
     const uint8_t lowVal = 5;   // ~2% brightness of 255
     const uint8_t highVal = 15; // ~6% brightness of 255
     const TickType_t delayMs = 30 / portTICK_PERIOD_MS;
 
-    while (currentLEDAnimationState == LED_INPUT_COLLECTION)
+    while (currentLEDAnimationState == LED_TRANSITION)
     {
         // Fade up: 2% -> 6%
-        for (int step = 0; step <= steps && currentLEDAnimationState == LED_INPUT_COLLECTION; step++)
+        for (int step = 0; step <= steps && currentLEDAnimationState == LED_TRANSITION; step++)
         {
             float t = step / (float)steps;
             uint8_t brightness = lowVal + (highVal - lowVal) * t;
@@ -182,7 +153,7 @@ void displaySimonaStageInputCollectionAnimation()
         }
 
         // Fade down: 6% -> 2%
-        for (int step = 0; step <= steps && currentLEDAnimationState == LED_INPUT_COLLECTION; step++)
+        for (int step = 0; step <= steps && currentLEDAnimationState == LED_TRANSITION; step++)
         {
             float t = step / (float)steps;
             uint8_t brightness = highVal - (highVal - lowVal) * t;
@@ -191,6 +162,35 @@ void displaySimonaStageInputCollectionAnimation()
             vTaskDelay(delayMs);
         }
     }
+}
+
+// Replace displaySimonaStageInputCollectionAnimation with the following:
+void displaySimonaStageInputCollectionAnimation()
+{
+    extern int currentLastPressedButton; // declare external variable for msg.lastPressedButton
+    int button = currentLastPressedButton; // default value if undefined may be 0
+
+    CRGB targetColor;
+    switch(button)
+    {
+        case 0: targetColor = CRGB(255, 0, 0);   break; // red
+        case 1: targetColor = CRGB(0, 255, 0);   break; // green
+        case 2: targetColor = CRGB(0, 0, 255);   break; // blue
+        case 3: targetColor = CRGB(255, 255, 0); break; // yellow
+        default: targetColor = CRGB(255, 0, 0);  break; // fallback to red
+    }
+
+    const uint8_t offVal = 8; // 3% of 255 ≈ 8
+    CRGB offWhite = CRGB(offVal, offVal, offVal);
+
+    // Turn on the selected color
+    fill_solid(leds, NUM_LEDS_FOR_TEST, targetColor);
+    FastLED.show();
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+
+    // Bring it back to the 5% white for 'off'
+    fill_solid(leds, NUM_LEDS_FOR_TEST, offWhite);
+    FastLED.show();
 }
 
 // New function for LED_VERIFICATION state
@@ -257,18 +257,21 @@ void displaySimonaStageResetAnimation()
     const int steps = 10;
     const uint8_t offVal = 8; // 3% of 255 ≈ 8
     const TickType_t tickDelay50 = 50 / steps / portTICK_PERIOD_MS;
+    const TickType_t totalDuration = 1000 / portTICK_PERIOD_MS; // 250ms
     CRGB offWhite = CRGB(offVal, offVal, offVal);
     struct ColorTransition
     {
         CRGB base;
         CRGB full;
     } colorTransitions[3] = {
-        {CRGB(offVal, 0, 0), CRGB(255, 0, 0)}, // Red
-        {CRGB(0, offVal, 0), CRGB(0, 255, 0)}, // Green
-        {CRGB(0, 0, offVal), CRGB(0, 0, 255)}  // Blue
+        {CRGB(offVal, 0, 0), CRGB(255, 0, 0)},
+        {CRGB(0, offVal, 0), CRGB(0, 255, 0)},
+        {CRGB(0, 0, offVal), CRGB(0, 0, 255)}
     };
 
-    while (currentLEDAnimationState == LED_RESET)
+    TickType_t startTime = xTaskGetTickCount();
+
+    while (currentLEDAnimationState == LED_RESET && (xTaskGetTickCount() - startTime) < totalDuration)
     {
         // Loop through each color transition.
         for (int c = 0; c < 3; c++)
@@ -276,6 +279,7 @@ void displaySimonaStageResetAnimation()
             // 1. Transition from offWhite to 5% color.
             for (int step = 0; step <= steps; step++)
             {
+                if ((xTaskGetTickCount() - startTime) >= totalDuration) { goto reset_end; } // new check
                 float t = step / (float)steps;
                 CRGB color;
                 color.r = offWhite.r + (colorTransitions[c].base.r - offWhite.r) * t;
@@ -288,6 +292,7 @@ void displaySimonaStageResetAnimation()
             // 2. Ramp up LED from 5% to 100% for this color.
             for (int step = 0; step <= steps; step++)
             {
+                if ((xTaskGetTickCount() - startTime) >= totalDuration) { goto reset_end; }
                 float t = step / (float)steps;
                 CRGB color;
                 color.r = colorTransitions[c].base.r + (colorTransitions[c].full.r - colorTransitions[c].base.r) * t;
@@ -298,12 +303,14 @@ void displaySimonaStageResetAnimation()
                 vTaskDelay(tickDelay50);
             }
             // 3. Hold at 100% color.
+            if ((xTaskGetTickCount() - startTime) >= totalDuration) { goto reset_end; }
             fill_solid(leds, NUM_LEDS_FOR_TEST, colorTransitions[c].full);
             FastLED.show();
             vTaskDelay(150 / portTICK_PERIOD_MS);
             // 4. Ramp down back to 5% color.
             for (int step = 0; step <= steps; step++)
             {
+                if ((xTaskGetTickCount() - startTime) >= totalDuration) { goto reset_end; }
                 float t = step / (float)steps;
                 CRGB color;
                 color.r = colorTransitions[c].full.r - (colorTransitions[c].full.r - colorTransitions[c].base.r) * t;
@@ -316,6 +323,7 @@ void displaySimonaStageResetAnimation()
             // 5. Transition from 5% color back to offWhite.
             for (int step = 0; step <= steps; step++)
             {
+                if ((xTaskGetTickCount() - startTime) >= totalDuration) { goto reset_end; }
                 float t = step / (float)steps;
                 CRGB color;
                 color.r = colorTransitions[c].base.r + (offWhite.r - colorTransitions[c].base.r) * t;
@@ -326,5 +334,11 @@ void displaySimonaStageResetAnimation()
                 vTaskDelay(tickDelay50);
             }
         }
+    }
+reset_end:
+    while (currentLEDAnimationState == LED_RESET) {
+        fill_solid(leds, NUM_LEDS_FOR_TEST, offWhite);
+        FastLED.show();
+        vTaskDelay(50 / portTICK_PERIOD_MS); // adjust delay as needed
     }
 }

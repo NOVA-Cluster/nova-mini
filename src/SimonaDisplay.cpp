@@ -5,6 +5,7 @@
 #include "SimonaDisplaySequences.h" // For LED animations
 
 extern int currentLitButton; // Add extern declaration so currentLitButton is visible
+extern int currentLastPressedButton; 
 
 /*
  * displaySimonaStageWaiting
@@ -31,8 +32,8 @@ void displaySimonaStageSequenceGeneration(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_SEQUENCE_GENERATION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_SEQUENCE_GENERATION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
-    currentLEDAnimationState = LED_SEQUENCE_GENERATION;
     currentLitButton = msg.litButton;
+    currentLEDAnimationState = LED_SEQUENCE_GENERATION;
 }
 
 /*
@@ -60,6 +61,7 @@ void displaySimonaStageInputCollection(const SimonaMessage &msg)
         safeSerialPrintf("Stage: SIMONA_STAGE_INPUT_COLLECTION\nMessage contents:\n  message_id: %d\n  stage: SIMONA_STAGE_INPUT_COLLECTION\n  level: %d\n  gamePlay: %d\n  lost: %d\n  litButton: %d\n  lastPressedButton: %d\n",
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
+    currentLastPressedButton = msg.lastPressedButton;
     currentLEDAnimationState = LED_INPUT_COLLECTION;
 }
 
