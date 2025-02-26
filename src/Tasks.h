@@ -2,6 +2,7 @@
 #define TASKS_H
 
 #include <Arduino.h>
+#include "Web.h"  // Add this include
 
 void TaskWeb(void *pvParameters);
 void TaskOutputs(void *pvParameters);

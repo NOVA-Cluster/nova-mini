@@ -19,7 +19,8 @@ typedef struct {
     uint8_t gamePlay;
     uint8_t lost;
     uint8_t litButton;           
-    uint8_t lastPressedButton;   
+    uint8_t lastPressedButton;
+    uint8_t round;
 } SimonaMessage;
 
 #endif // SIMONAMESSAGE_H

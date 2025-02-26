@@ -1,6 +1,7 @@
 #include "Utilities.h"
 #include <stdarg.h>
 #include "freertos/semphr.h"
+#include <Arduino.h> // Added to define __FlashStringHelper and F()
 
 static SemaphoreHandle_t serialMutex;  // Private static variable
 

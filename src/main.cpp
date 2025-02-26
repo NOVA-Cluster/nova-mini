@@ -18,7 +18,7 @@
 
 #include "Web.h"
 #include <stdarg.h>
-#include "freertos/semphr.h"  // Corrected include directive
+#include "freertos/semphr.h" // Corrected include directive
 
 #include "Tasks.h" // New include for task declarations
 
@@ -82,6 +82,41 @@ CRGB leds[NUM_LEDS_FOR_TEST]; // LED array for SM16703
 int currentLitButton = 0;
 int currentLastPressedButton = 0; // added definition for msg.lastPressedButton used in animations
 
+// Add WiFi event handler function
+void WiFiEvent(WiFiEvent_t event)
+{
+    Serial.printf("[WiFi-event] event: %d\n", event);
+
+    switch (event)
+    {
+    case SYSTEM_EVENT_WIFI_READY:
+        Serial.println("WiFi interface ready");
+        break;
+    case SYSTEM_EVENT_SCAN_DONE:
+        Serial.println("Completed scan for access points");
+        break;
+    case SYSTEM_EVENT_STA_START:
+        Serial.println("WiFi client started");
+        break;
+    case SYSTEM_EVENT_AP_START:
+        Serial.println("WiFi AP started");
+        Serial.print("AP IP address: ");
+        Serial.println(WiFi.softAPIP());
+        Serial.print("AP MAC address: ");
+        Serial.println(WiFi.softAPmacAddress());
+        break;
+    case SYSTEM_EVENT_AP_STOP:
+        Serial.println("WiFi AP stopped");
+        break;
+    case SYSTEM_EVENT_AP_STACONNECTED:
+        Serial.println("Client connected");
+        break;
+    case SYSTEM_EVENT_AP_STADISCONNECTED:
+        Serial.println("Client disconnected");
+        break;
+    }
+}
+
 void setup()
 {
     // Use configuration values for reset.
@@ -135,20 +170,65 @@ void setup()
     String macAddress = WiFi.macAddress();
     String AP_String = "";
 
-    for (int i = 0; i < 6; i++)
-    {
-        uint8_t byteValue = strtoul(macAddress.substring(i * 3, i * 3 + 2).c_str(), NULL, 16);
-        AP_String += String(byteValue, HEX);
+    // Get the last 4 characters of the MAC address (last 2 bytes)
+    AP_String = "NOVAMINI_";
+    for (int i = 12; i < 17; i++) {  // Start from position 12 (XX:XX:XX:XX:YY:ZZ)
+        if (macAddress[i] != ':') {   // Skip the colon
+            AP_String += macAddress[i];
+        }
     }
 
-    AP_String = "NOVAMINI_" + AP_String.substring(0, 4);
-    // your other setup stuff...
-    WiFi.mode(WIFI_AP_STA); // Ensure WiFi mode is set to WIFI_AP_STA
-    WiFi.softAP(AP_String, "scubadandy");
-    WiFi.setSleep(false); // Disable power saving on the wifi interface.
+    Serial.printf("Setting WiFi mode to WIFI_AP_STA... ");
 
-    dnsServer.start(53, "*", WiFi.softAPIP());
+    // Consolidated WiFi setup with proper sequencing
+    Serial.println("\n=== WiFi Setup Start ===");
+    WiFi.onEvent(WiFiEvent);
 
+    Serial.printf("Setting WiFi mode to WIFI_AP_STA... ");
+    if (WiFi.mode(WIFI_AP_STA))
+    {
+        Serial.println("SUCCESS");
+    }
+    else
+    {
+        Serial.println("FAILED");
+        ESP.restart(); // Restart if WiFi mode setting fails
+    }
+
+    delay(100); // Small delay after mode change
+
+    Serial.printf("Starting AP with SSID: %s... ", AP_String.c_str());
+    if (WiFi.softAP(AP_String.c_str(), "scubadandy"))
+    {
+        Serial.println("SUCCESS");
+    }
+    else
+    {
+        Serial.println("FAILED");
+        ESP.restart(); // Restart if AP setup fails
+    }
+
+    WiFi.setSleep(false); // Disable power saving
+    delay(100);           // Give AP time to start up
+
+    Serial.println("AP Status:");
+    Serial.printf("- SSID: %s\n", WiFi.softAPSSID().c_str());
+    Serial.printf("- IP: %s\n", WiFi.softAPIP().toString().c_str());
+    Serial.printf("- MAC: %s\n", WiFi.softAPmacAddress().c_str());
+    Serial.printf("- Channel: %d\n", WiFi.channel());
+
+    if (dnsServer.start(53, "*", WiFi.softAPIP()))
+    {
+        Serial.println("DNS Server started successfully");
+    }
+    else
+    {
+        Serial.println("DNS Server failed to start");
+    }
+
+    Serial.println("=== WiFi Setup Complete ===\n");
+
+    // Continue with rest of setup
     safeSerialPrintf("Setting up Webserver\n");
     webSetup();
     safeSerialPrintf("Setting up Webserver - Done\n");
@@ -189,6 +269,8 @@ void setup()
     Serial.println(WiFi.macAddress());
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
+    Serial.print("AP IP Address: ");
+    Serial.println(WiFi.softAPIP());
     Serial.print("Free Heap: ");
     Serial.println(ESP.getFreeHeap());
     // Added new stats

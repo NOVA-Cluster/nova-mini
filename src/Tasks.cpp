@@ -16,7 +16,9 @@ void TaskWeb(void *pvParameters)
     safeSerialPrintf("TaskWeb is running\n");
     while (1)
     {
-        // ...existing code...
+        webLoop();  // Make sure this line exists
+        vTaskDelay(pdMS_TO_TICKS(100)); // Add a small delay to prevent watchdog triggers
+
         yield();
         delay(1);
         static uint32_t lastExecutionTime = 0;

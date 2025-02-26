@@ -23,25 +23,10 @@ void handleRequest(AsyncWebServerRequest *request)
 uint16_t switchOne;
 uint16_t status;
 uint16_t controlMillis;
-
-uint16_t lightingBrightnessSlider, lightingSinSlider, lightingProgramSelect, lightingUpdatesSlider, lightingReverseSwitch, lightingFireSwitch, lightingLocalDisable, lightingAuto, lightingAutoTime;
 uint16_t mainDrunktardSwitch;
-uint16_t resetConfigSwitch, resetRebootSwitch;
-
 uint16_t pooferA1, pooferA2, pooferA3, pooferA4;
-
-uint16_t starManualPoof, starManualBlow, starManuallowFuel, starManualFuel, starManualZap, starManualSelect;
-uint8_t starManualSelectValue = 0;
-
-uint16_t sysInfoSeqIndex;
-
-uint16_t seqBoomAll, seqBoomLeftRight, seqBoomRightLeft;
-
-uint16_t starSeq_SEQ_POOF_END_TO_END, starSeq_SEQ_BOOMER_LEFT_TO_RIGHT, starSeq_SEQ_BOOMER_RIGHT_TO_LEFT, starSeq_SEQ_BOOM_FAST, starSeq_SEQ_BOOM_WAVE_IN, starSeq_SEQ_OFF;
-uint16_t starSeq_SEQ_BOOM_POOF;
-
-uint16_t dumpSwitch; // Added global variable for the Dump switch
-uint16_t dumpDurationSlider; // New slider control for dump duration
+uint16_t dumpSwitch;
+uint16_t dumpDurationSlider;
 
 void numberCall(Control *sender, int type)
 {
@@ -136,64 +121,32 @@ void webSetup()
     Serial.println("In webSetup()");
     // Add tabs
     uint16_t mainTab = ESPUI.addControl(ControlType::Tab, "Main", "Main");
-    // ...existing tab creations...
 
     // Add Device Info label to Main tab.
     String deviceInfo = "MAC: " + WiFi.macAddress() + ", IP: " + WiFi.softAPIP().toString();
     uint16_t deviceInfoLabel = ESPUI.addControl(ControlType::Label, "Device Info", deviceInfo, ControlColor::None, mainTab);
 
-    // uint16_t settingsTab = ESPUI.addControl(ControlType::Tab, "Settings", "Settings");
     uint16_t manualTab = ESPUI.addControl(ControlType::Tab, "Manual", "Manual");
-    uint16_t simonasTab = ESPUI.addControl(ControlType::Tab, "Simona", "Simona");
-    uint16_t lightingTab = ESPUI.addControl(ControlType::Tab, "Lighting", "Lighting");
-    uint16_t sysInfoTab = ESPUI.addControl(ControlType::Tab, "System Info", "System Info");
-    uint16_t resetTab = ESPUI.addControl(ControlType::Tab, "Reset", "Reset");
-    uint16_t dumpTab = ESPUI.addControl(ControlType::Tab, "Dump", "Dump"); // New Dump tab
+    uint16_t dumpTab = ESPUI.addControl(ControlType::Tab, "Dump", "Dump");
 
     // Add status label above all tabs
     status = ESPUI.addControl(ControlType::Label, "Status:", "Unknown Status", ControlColor::Turquoise);
 
     //----- (Main) -----
     controlMillis = ESPUI.addControl(ControlType::Label, "Uptime", "0", ControlColor::Emerald, mainTab);
-    // mainDrunktardSwitch = ESPUI.addControl(ControlType::Switcher, "Drunktard", String(enable->isDrunktard()), ControlColor::None, mainTab, &switchCallback);
-
-    //----- (Settings) -----
-    // ESPUI.addControl(ControlType::Switcher, "Sleep (Disable)", "", ControlColor::None, settingsTab, &switchCallback);
 
     //----- (Manual) -----
-
     pooferA1 = ESPUI.addControl(ControlType::Button, "Poofers", "Poof 1", ControlColor::Alizarin, manualTab, buttonCallback);
     pooferA2 = ESPUI.addControl(ControlType::Button, "", "Poof 2", ControlColor::None, pooferA1, buttonCallback);
     pooferA3 = ESPUI.addControl(ControlType::Button, "", "Poof 3", ControlColor::None, pooferA1, buttonCallback);
     pooferA4 = ESPUI.addControl(ControlType::Button, "", "Poof 4", ControlColor::None, pooferA1, buttonCallback);
 
-    //---- Tab -- Lighting
-
-    // System Info Tab
-    sysInfoSeqIndex = ESPUI.addControl(ControlType::Label, "Button Sequence Index", "Red: 0, Green: 0, Blue: 0, Yellow: 0", ControlColor::Sunflower, sysInfoTab);
-
-    // Reset tab
-    ESPUI.addControl(ControlType::Label, "**WARNING**", "Don't even think of doing anything in this tab unless you want to break something!!", ControlColor::Sunflower, resetTab);
-    resetConfigSwitch = ESPUI.addControl(ControlType::Switcher, "Reset Configurations", "0", ControlColor::Sunflower, resetTab, &switchCallback);
-    resetRebootSwitch = ESPUI.addControl(ControlType::Switcher, "Reboot", "0", ControlColor::Sunflower, resetTab, &switchCallback);
-
-    // Add Dump tab control using switchCallback callback.
-    // Add Dump Duration slider above the Dump switch.
-    // Slider range: 60 (1 minute) to 3600 (1 hour). Initial value: "60".
+    // Dump tab controls
     dumpDurationSlider = ESPUI.addControl(ControlType::Slider, "Dump Duration (secs)", "60", ControlColor::None, dumpTab, &slider);
-
     dumpSwitch = ESPUI.addControl(ControlType::Switcher, "Dump", "0", ControlColor::Alizarin, dumpTab, &switchCallback);
 
-    // Enable this option if you want sliders to be continuous (update during move) and not discrete (update on stop)
-    // ESPUI.sliderContinuous = true;
-
-    // Optionally use HTTP BasicAuth
-    // ESPUI.server->addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
-    // ESPUI->server->begin();
-
     ESPUI.captivePortal = true;
-
-    ESPUI.list(); // List all files on LittleFS, for info
+    ESPUI.list();
     ESPUI.begin("NOVA Mini");
     Serial.println("Leaving webSetup()");
 }
@@ -203,57 +156,30 @@ void webSetup()
  */
 void webLoop()
 {
-    // Initialize static variables
-    static long oldTime = 0;
-    static bool switchState = false;
-
+    static unsigned long lastUpdate = 0;
     unsigned long currentMillis = millis();
-    unsigned long seconds = (currentMillis / 1000) % 60;
-    unsigned long minutes = (currentMillis / (1000 * 60)) % 60;
-    unsigned long hours = (currentMillis / (1000 * 60 * 60)) % 24;
-    unsigned long days = (currentMillis / (1000 * 60 * 60 * 24));
 
-    String formattedTime = String(days) + "d " + String(hours) + "h " + String(minutes) + "m " + String(seconds) + "s";
-
-    // Update controls every second
-    if (millis() - oldTime > 1000)
+    // Update every 1000ms (1 second)
+    if (currentMillis - lastUpdate >= 1000)
     {
-        // Toggle switch state
-        switchState = !switchState;
+        // Calculate time components
+        unsigned long totalSeconds = currentMillis / 1000;
+        unsigned long seconds = totalSeconds % 60;
+        unsigned long minutes = (totalSeconds / 60) % 60;
+        unsigned long hours = (totalSeconds / 3600) % 24;
+        unsigned long days = totalSeconds / 86400;
 
-        // Update switch and millis controls
-        // ESPUI.updateControlValue(switchOne, switchState ? "1" : "0");
+        // Format time string
+        String formattedTime = String(days) + "d " +
+                             String(hours) + "h " +
+                             String(minutes) + "m " +
+                             String(seconds) + "s";
+
+        // Update the display
         ESPUI.updateControlValue(controlMillis, formattedTime);
 
-        // Update oldTime
-        oldTime = millis();
-
-        /*
-                if (enable->isSystemEnabled())
-                {
-                    if (enable->isDrunktard())
-                    {
-                        ESPUI.updateControlValue(status, "Drunktard");
-                    }
-                    else
-                    {
-                        ESPUI.updateControlValue(status, "Enabled");
-                    }
-                }
-                else
-                {
-                    if (enable->isDrunktard())
-                    {
-                        ESPUI.updateControlValue(status, "System Disabled (Drunktard)");
-                    }
-                    else
-                    {
-                        ESPUI.updateControlValue(status, "System Disabled (Emergency Stop)");
-                    }
-                }
-
-                String sequenceString = "Red: " + String(star->sequenceRed) + ", Green: " + String(star->sequenceGreen) + "<br>Blue: " + String(star->sequenceBlue) + ", Yellow: " + String(star->sequenceYellow);
-                ESPUI.updateControlValue(sysInfoSeqIndex, sequenceString);
-        */
+        lastUpdate = currentMillis;
     }
+
+    // ...rest of existing webLoop code...
 }
