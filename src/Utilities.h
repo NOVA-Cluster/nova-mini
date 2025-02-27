@@ -6,5 +6,6 @@
 void initSafeSerial();
 void safeSerialPrintf(const char* format, ...);
 void NovaLogo();
+String getLastFourOfMac();
 
 #endif // UTILITIES_H

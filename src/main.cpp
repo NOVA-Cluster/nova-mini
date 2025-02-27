@@ -168,15 +168,7 @@ void setup()
     }
 
     String macAddress = WiFi.macAddress();
-    String AP_String = "";
-
-    // Get the last 4 characters of the MAC address (last 2 bytes)
-    AP_String = "NOVAMINI_";
-    for (int i = 12; i < 17; i++) {  // Start from position 12 (XX:XX:XX:XX:YY:ZZ)
-        if (macAddress[i] != ':') {   // Skip the colon
-            AP_String += macAddress[i];
-        }
-    }
+    String AP_String = "NOVAMINI_" + getLastFourOfMac();  // Replace existing MAC parsing code with this line
 
     Serial.printf("Setting WiFi mode to WIFI_AP_STA... ");
 

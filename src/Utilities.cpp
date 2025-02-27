@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include "freertos/semphr.h"
 #include <Arduino.h> // Added to define __FlashStringHelper and F()
+#include <WiFi.h>  // Add this include for WiFi functionality
 
 static SemaphoreHandle_t serialMutex;  // Private static variable
 
@@ -91,4 +92,11 @@ void NovaLogo() {
     for (unsigned i = 0; i < sizeof(logoLines) / sizeof(logoLines[0]); i++) {
         printFWithIndent(logoLines[i].indent, logoLines[i].line);
     }
+}
+
+String getLastFourOfMac() {
+    String mac = WiFi.macAddress();
+    String lastPart = mac.substring(mac.length() - 5);  // Get last 5 chars including colon
+    lastPart.replace(":", "");  // Remove the colon
+    return lastPart;
 }
