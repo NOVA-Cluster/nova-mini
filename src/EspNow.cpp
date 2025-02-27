@@ -5,6 +5,8 @@
 #include "SimonaMessage.h" // Changed from PooferMessage.h
 #include "SimonaTypes.h"   // Added for SimonaTypes
 #include "SimonaDisplay.h" // Added to declare display functions
+#include <ESPUI.h>         // Added for ESPUI
+#include <Preferences.h>   // Add this include
 
 // Helper function to convert SimonaStage enum to a string.
 const char *stageToString(SimonaStage stage)
@@ -34,8 +36,44 @@ const char *stageToString(SimonaStage stage)
 
 SimonaMessage currentMessage; // Global variable updated to SimonaMessage
 
+// Add global variable to track connected remotes
+extern uint16_t connectedRemotesLabel;
+String connectedRemotes = "No remotes connected";
+
+void updatePeerList(const uint8_t *mac)
+{
+    char macStr[18];
+    snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    // Save this MAC to preferences using the same key as the web interface
+    Preferences preferences;
+    preferences.begin("nova", false);
+    preferences.putString("remote_mac", macStr); // Changed from "last_remote" to "remote_mac"
+    preferences.end();
+
+    if (!connectedRemotes.indexOf(macStr))
+    {
+        if (connectedRemotes == "No remotes connected")
+        {
+            connectedRemotes = String(macStr);
+        }
+        else
+        {
+            connectedRemotes += "\n" + String(macStr);
+        }
+        ESPUI.updateControlValue(connectedRemotesLabel, connectedRemotes);
+    }
+}
+
 void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
+    // Update and save the remote's MAC address
+    updatePeerList(mac);
+
+    // Pulse relay 6 on every message receipt
+    triggerRelay(6, 50); // 50ms pulse duration
+
     if (len == sizeof(SimonaMessage))
     {
         SimonaMessage receivedMsg;
@@ -110,32 +148,58 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
             safeSerialPrintf("Error sending ack to %s: %s\n", macStr, esp_err_to_name(result));
         }
     }
+    else
+    {
+        safeSerialPrintf("*** Received message *** : Wrong length. Received: %d, Expected: %d\n", len, sizeof(SimonaMessage));
+
+    }
 }
 
 void initEspNowReceiver()
 {
-    //Serial.begin(115200);
     if (esp_now_init() != ESP_OK)
     {
         safeSerialPrintf("Error initializing ESP-NOW\n");
         return;
     }
 
-    // Add peer
-    esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, "\xA4\xCF\x12\x6E\xC9\xE0", 6);
-    peerInfo.channel = 0;  
-    peerInfo.encrypt = false;
+    // Load MAC address from preferences - use same key as web interface
+    Preferences preferences;
+    preferences.begin("nova", false);
+    String remoteMacAddress = preferences.getString("remote_mac", ""); // Changed from "last_remote" to "remote_mac"
+    preferences.end();
 
-    esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
-    if (addPeerResult != ESP_OK)
+    if (!remoteMacAddress.isEmpty())
     {
-        safeSerialPrintf("Failed to add peer: %s\n", esp_err_to_name(addPeerResult));
-        return;
+        // Convert MAC string to bytes
+        uint8_t remoteMac[6];
+        sscanf(remoteMacAddress.c_str(), "%02hhX:%02hhX:%02hhX:%02hhX:%02hhX:%02hhX",
+               &remoteMac[0], &remoteMac[1], &remoteMac[2],
+               &remoteMac[3], &remoteMac[4], &remoteMac[5]);
+
+        // Add peer using saved MAC
+        esp_now_peer_info_t peerInfo = {};
+        memcpy(peerInfo.peer_addr, remoteMac, 6);
+        peerInfo.channel = 0;
+        peerInfo.encrypt = false;
+
+        esp_now_del_peer(remoteMac); // Remove if exists
+        esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
+        if (addPeerResult == ESP_OK)
+        {
+            safeSerialPrintf("ESP-NOW peer configured: %s\n", remoteMacAddress.c_str());
+            // Update the UI
+            connectedRemotes = remoteMacAddress;
+            ESPUI.updateControlValue(connectedRemotesLabel, connectedRemotes);
+        }
+        else
+        {
+            safeSerialPrintf("Failed to add ESP-NOW peer: %s\n", esp_err_to_name(addPeerResult));
+        }
     }
     else
     {
-        safeSerialPrintf("Peer added successfully\n");
+        safeSerialPrintf("No remote MAC address configured\n");
     }
 
     esp_now_register_recv_cb(onDataRecv);

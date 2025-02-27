@@ -7,6 +7,35 @@
 #include "main.h"
 #include <ESPUI.h>
 #include <Arduino.h>
+#include <Preferences.h> // Add this include
+
+// Add new control IDs
+uint16_t localMacLabel;
+uint16_t connectedRemotesLabel;
+uint16_t remoteMacText;
+uint16_t savedRemoteMacLabel;
+String remoteMacAddress = "";
+
+// Add MAC address validation helper
+bool isValidMacAddress(const String &mac)
+{
+    if (mac.length() != 17)
+        return false;
+    for (int i = 0; i < 17; i++)
+    {
+        if (i % 3 == 2)
+        {
+            if (mac.charAt(i) != ':')
+                return false;
+        }
+        else
+        {
+            if (!isxdigit(mac.charAt(i)))
+                return false;
+        }
+    }
+    return true;
+}
 
 void handleRequest(AsyncWebServerRequest *request)
 {
@@ -116,18 +145,74 @@ void selectExample(Control *sender, int value)
     Serial.println(sender->value);
 }
 
+// Add textCallback function for MAC address input
+void textCallback(Control *sender, int type)
+{
+    if (sender->id == remoteMacText)
+    {
+        String newMac = sender->value;
+        newMac.toUpperCase();
+        ESPUI.updateControlValue(remoteMacText, newMac);
+
+        if (newMac.isEmpty())
+        {
+            ESPUI.updateControlValue(status, "Enter remote's MAC address");
+            return;
+        }
+
+        bool isValid = isValidMacAddress(newMac);
+        Control *statusControl = ESPUI.getControl(status);
+        if (!statusControl)
+            return;
+
+        if (isValid)
+        {
+            if (type == 10)
+            { // Enter pressed or focus lost
+                remoteMacAddress = newMac;
+                Preferences preferences;
+                preferences.begin("nova", false);
+                preferences.putString("remote_mac", remoteMacAddress);
+                preferences.end();
+
+                ESPUI.updateControlValue(status, "✓ MAC address saved: " + remoteMacAddress);
+                statusControl->color = ControlColor::Emerald;
+                ESPUI.updateControl(statusControl);
+                ESPUI.updateControlValue(savedRemoteMacLabel, remoteMacAddress);
+                ESPUI.updateControlValue(remoteMacText, "");
+
+                // Reinitialize ESP-NOW with new MAC
+                initEspNowReceiver();
+            }
+            else
+            {
+                ESPUI.updateControlValue(status, "✓ Valid format - Press Enter to save");
+                statusControl->color = ControlColor::Wetasphalt;
+                ESPUI.updateControl(statusControl);
+            }
+        }
+        else
+        {
+            String errorMsg = (newMac.length() != 17) ? "Length: " + String(newMac.length()) + "/17 chars" : "Invalid format. Use XX:XX:XX:XX:XX:XX";
+            ESPUI.updateControlValue(status, "❌ " + errorMsg);
+            statusControl->color = ControlColor::Alizarin;
+            ESPUI.updateControl(statusControl);
+        }
+    }
+}
+
 void webSetup()
 {
     Serial.println("In webSetup()");
     // Add tabs
     uint16_t mainTab = ESPUI.addControl(ControlType::Tab, "Main", "Main");
+    uint16_t manualTab = ESPUI.addControl(ControlType::Tab, "Manual", "Manual");
+    uint16_t dumpTab = ESPUI.addControl(ControlType::Tab, "Dump", "Dump");
+    uint16_t espNowTab = ESPUI.addControl(ControlType::Tab, "ESPNow", "ESPNow");
 
     // Add Device Info label to Main tab.
     String deviceInfo = "MAC: " + WiFi.macAddress() + ", IP: " + WiFi.softAPIP().toString();
     uint16_t deviceInfoLabel = ESPUI.addControl(ControlType::Label, "Device Info", deviceInfo, ControlColor::None, mainTab);
-
-    uint16_t manualTab = ESPUI.addControl(ControlType::Tab, "Manual", "Manual");
-    uint16_t dumpTab = ESPUI.addControl(ControlType::Tab, "Dump", "Dump");
 
     // Add status label above all tabs
     status = ESPUI.addControl(ControlType::Label, "Status:", "Unknown Status", ControlColor::Turquoise);
@@ -144,6 +229,54 @@ void webSetup()
     // Dump tab controls
     dumpDurationSlider = ESPUI.addControl(ControlType::Slider, "Dump Duration (secs)", "60", ControlColor::None, dumpTab, &slider);
     dumpSwitch = ESPUI.addControl(ControlType::Switcher, "Dump", "0", ControlColor::Alizarin, dumpTab, &switchCallback);
+
+    // Add ESP-NOW tab controls
+    ESPUI.addControl(
+        ControlType::Label,
+        "Instructions",
+        "ESP-NOW Configuration:<br><br>"
+        "1. This device's MAC address is shown below for remote devices to connect to<br>"
+        "2. Enter the remote device's MAC address to establish the connection<br>"
+        "3. The MAC format should be: XX:XX:XX:XX:XX:XX (uppercase)<br>"
+        "4. Press Enter to save the MAC address",
+        ControlColor::Carrot,
+        espNowTab);
+
+    String localMac = WiFi.macAddress();
+    localMacLabel = ESPUI.addControl(
+        ControlType::Label,
+        "Local MAC Address",
+        localMac,
+        ControlColor::Turquoise,
+        espNowTab);
+
+    // Load saved remote MAC
+    Preferences preferences;
+    preferences.begin("nova", false);
+    remoteMacAddress = preferences.getString("remote_mac", "");
+    preferences.end();
+
+    savedRemoteMacLabel = ESPUI.addControl(
+        ControlType::Label,
+        "Saved Remote MAC",
+        remoteMacAddress.isEmpty() ? "Not set" : remoteMacAddress,
+        ControlColor::Peterriver,
+        espNowTab);
+
+    remoteMacText = ESPUI.addControl(
+        ControlType::Text,
+        "Set Remote MAC Address",
+        "",
+        ControlColor::Alizarin,
+        espNowTab,
+        &textCallback);
+
+    connectedRemotesLabel = ESPUI.addControl(
+        ControlType::Label,
+        "Connected Remotes",
+        "No remotes connected",
+        ControlColor::Peterriver,
+        espNowTab);
 
     ESPUI.captivePortal = true;
     ESPUI.list();
@@ -171,9 +304,9 @@ void webLoop()
 
         // Format time string
         String formattedTime = String(days) + "d " +
-                             String(hours) + "h " +
-                             String(minutes) + "m " +
-                             String(seconds) + "s";
+                               String(hours) + "h " +
+                               String(minutes) + "m " +
+                               String(seconds) + "s";
 
         // Update the display
         ESPUI.updateControlValue(controlMillis, formattedTime);

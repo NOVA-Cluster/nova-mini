@@ -1,4 +1,3 @@
-
 #ifndef WEB_H
 #define WEB_H
 
@@ -26,6 +25,12 @@ public:
 private:
 
 };
+
+extern uint16_t localMacLabel;
+extern uint16_t connectedRemotesLabel;
+extern uint16_t remoteMacText;
+extern uint16_t savedRemoteMacLabel;
+extern String remoteMacAddress;
 
 void webSetup(void);
 
