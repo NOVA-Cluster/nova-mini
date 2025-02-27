@@ -82,7 +82,6 @@ void TaskOutputs(void *pvParameters)
 // TaskPulseRelay definition
 void TaskPulseRelay(void *pvParameters)
 {
-    // ...existing code from TaskPulseRelay...
     UBaseType_t uxHighWaterMark;
     TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
     const char *pcTaskName = pcTaskGetName(xTaskHandle);
@@ -93,7 +92,7 @@ void TaskPulseRelay(void *pvParameters)
         static uint32_t lastPulse = 0;
         if (currentTime - lastPulse >= 1000)
         {
-            triggerRelay(7, 100);
+            triggerRelay(7, 50); // Restored: Pulse relay 7 every second
             lastPulse = currentTime;
         }
         yield();
