@@ -12,6 +12,9 @@
 // 'lost'             : Flag indicating loss (non-zero means game lost).
 // 'litButton'        : Used in SIMONA_STAGE_SEQUENCE_GENERATION to indicate which button light is lit.
 // 'lastPressedButton': Used in SIMONA_STAGE_INPUT_COLLECTION to indicate the button just pressed.
+// 'currentRound'     : Current round number.
+// 'maxRounds'        : Maximum rounds.
+// 'levelsInRound'    : Levels in current round.
 typedef struct {
     uint32_t message_id;         
     SimonaStage stage;
@@ -20,7 +23,9 @@ typedef struct {
     uint8_t lost;
     uint8_t litButton;           
     uint8_t lastPressedButton;
-    uint8_t round;
+    uint8_t currentRound;       // Added: current round number
+    uint8_t maxRounds;          // Added: maximum rounds
+    uint8_t levelsInRound;      // Added: levels in current round
 } SimonaMessage;
 
 #endif // SIMONAMESSAGE_H
