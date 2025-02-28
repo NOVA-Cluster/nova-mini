@@ -404,3 +404,4 @@ FodyWeavers.xsd
 # Ignore .DS_Store files regardless of their location
 .DS_Store
 .DS_Store
+.DS_Store
