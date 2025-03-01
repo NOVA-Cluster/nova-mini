@@ -280,15 +280,22 @@ void webSetup()
     uint16_t dumpTab = ESPUI.addControl(ControlType::Tab, "Dump", "Dump");
     uint16_t espNowTab = ESPUI.addControl(ControlType::Tab, "ESPNow", "ESPNow");
 
-    // Add Device Info label to Main tab.
-    String deviceInfo = "MAC: " + WiFi.macAddress() + ", IP: " + WiFi.softAPIP().toString();
-    uint16_t deviceInfoLabel = ESPUI.addControl(ControlType::Label, "Device Info", deviceInfo, ControlColor::None, mainTab);
-
     // Add status label above all tabs
     status = ESPUI.addControl(ControlType::Label, "Status:", "Unknown Status", ControlColor::Turquoise);
 
     //----- (Main) -----
-    controlMillis = ESPUI.addControl(ControlType::Label, "Uptime", "0", ControlColor::Emerald, mainTab);
+    // Remove these lines (or comment them out) from the Main tab section:
+    // String deviceInfo = "MAC: " + WiFi.macAddress() + ", IP: " + WiFi.softAPIP().toString();
+    // uint16_t deviceInfoLabel = ESPUI.addControl(ControlType::Label, "Device Info", deviceInfo, ControlColor::None, mainTab);
+    // controlMillis = ESPUI.addControl(ControlType::Label, "Uptime", "0", ControlColor::Emerald, mainTab);
+
+    // Instead, add a new text field describing gameplay:
+    uint16_t gameDescriptionField = ESPUI.addControl(ControlType::Label, 
+        "Mini Nova Gameplay", 
+        "Mini Nova is a memory game where LED sequences are displayed. "
+        "Repeat the sequence by pressing the corresponding buttons. "
+        "Press the designated start button to begin.", 
+        ControlColor::None, mainTab);
 
     //----- (Manual) -----
     pooferA1 = ESPUI.addControl(ControlType::Button, "Poofers", "Poof 1", ControlColor::Alizarin, manualTab, buttonCallback);
@@ -355,7 +362,8 @@ void webSetup()
     // Create "System Info" tab
     sysInfoTab = ESPUI.addControl(ControlType::Tab, "System Info", "System Info");
 
-    // Add Device Info label
+    // Declare and initialize deviceInfo before adding the control
+    String deviceInfo = "MAC: " + WiFi.macAddress() + ", IP: " + WiFi.softAPIP().toString();
     deviceInfoLabel = ESPUI.addControl(ControlType::Label, "Device Info", deviceInfo, ControlColor::None, sysInfoTab);
 
     // Add Uptime label
@@ -427,7 +435,8 @@ void webLoop()
         ESPUI.updateControlValue(controlMillis, formattedTime);
 
         // Update uptime on web UI
-        String uptimeStr = String(totalSeconds) + " seconds";
+
+        String uptimeStr = String(days) + "d " + String(hours) + "h " + String(minutes) + "m " + String(seconds) + "s";
         ESPUI.updateControlValue(uptimeLabel, uptimeStr);
 
         lastUpdate = currentMillis;
