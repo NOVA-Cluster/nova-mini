@@ -12,5 +12,6 @@ void displaySimonaStageVerification(const SimonaMessage &msg);
 void displaySimonaStageGameLost(const SimonaMessage &msg);
 void displaySimonaStageGameWin(const SimonaMessage &msg);
 void displaySimonaStageReset(const SimonaMessage &msg);
+void displaySimonaStageRoundTransition(const SimonaMessage &msg); // Added for round transition
 
 #endif // SIMONA_H

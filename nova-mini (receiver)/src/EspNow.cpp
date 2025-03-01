@@ -29,6 +29,8 @@ const char *stageToString(SimonaStage stage)
         return "SIMONA_STAGE_GAME_WIN";
     case SIMONA_STAGE_RESET: // Added for reset stage.
         return "SIMONA_STAGE_RESET";
+    case SIMONA_STAGE_ROUND_TRANSITION: // Added for round transition
+        return "SIMONA_STAGE_ROUND_TRANSITION";
     default:
         return "UNKNOWN";
     }
@@ -89,7 +91,6 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
         lastMessageId = receivedMsg.message_id;
 
         safeSerialPrintf("*** Received message_id: %d ***\n", receivedMsg.message_id);
-        /*
 
                 // Print full message content in human readable form.
                 safeSerialPrintf("Message contents:\n");
@@ -101,6 +102,7 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
                 safeSerialPrintf("  lost: %d\n", receivedMsg.lost);
                 safeSerialPrintf("  litButton: %d\n", receivedMsg.litButton);
                 safeSerialPrintf("  lastPressedButton: %d\n", receivedMsg.lastPressedButton);
+        /*
         */
 
         // Call the display function for the corresponding stage.
@@ -129,6 +131,9 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
             break;
         case SIMONA_STAGE_RESET:
             displaySimonaStageReset(receivedMsg);
+            break;
+        case SIMONA_STAGE_ROUND_TRANSITION:
+            displaySimonaStageRoundTransition(receivedMsg);
             break;
         default:
             safeSerialPrintf("Unknown stage.\n");

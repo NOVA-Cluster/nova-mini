@@ -119,6 +119,7 @@ void WiFiEvent(WiFiEvent_t event)
 
 void setup()
 {
+
     // Use configuration values for reset.
     pinMode(RESET_PIN, OUTPUT);
     digitalWrite(RESET_PIN, LOW);  // Set LOW to trigger reset
@@ -126,6 +127,12 @@ void setup()
     digitalWrite(RESET_PIN, HIGH); // Set HIGH to end reset
 
     delay(SERIAL_MONITOR_DELAY_MS); // Wait for the serial monitor to open
+
+// Enable core dumps for better debugging
+#ifdef DEBUG
+    ESP_LOGI(TAG, "Enabling core dumps");
+    esp_core_dump_init();
+#endif
 
     Serial.begin(921600); // Updated baud rate to match monitor_speed
     initSafeSerial();     // Initialize safe serial printing (new)
@@ -168,7 +175,7 @@ void setup()
     }
 
     String macAddress = WiFi.macAddress();
-    String AP_String = "NOVAMINI_" + getLastFourOfMac();  // Replace existing MAC parsing code with this line
+    String AP_String = "NOVAMINI_" + getLastFourOfMac(); // Replace existing MAC parsing code with this line
 
     Serial.printf("Setting WiFi mode to WIFI_AP_STA... ");
 
@@ -241,7 +248,7 @@ void setup()
     // Create new TaskPulseRelay to handle relay #8 pulsing.
     safeSerialPrintf("Create TaskPulseRelay\n");
     delay(10);
-    xTaskCreate(&TaskPulseRelay, "TaskPulseRelay", 4 * 1024, NULL, 5, NULL);
+    xTaskCreate(&TaskPulseRelay, "TaskPulseRelay", 6 * 1024, NULL, 5, NULL);
     delay(10);
     safeSerialPrintf("Create TaskPulseRelay - Done\n");
 
@@ -253,7 +260,7 @@ void setup()
 
     // Create new TaskFastLED for SM16703 control
     safeSerialPrintf("Create TaskFastLED\n");
-    xTaskCreate(&TaskFastLED, "TaskFastLED", 4 * 1024, NULL, 5, NULL);
+    xTaskCreate(&TaskFastLED, "TaskFastLED", 8 * 1024, NULL, 5, NULL);
 
     // New: Print device information
     Serial.println("Device Information:");

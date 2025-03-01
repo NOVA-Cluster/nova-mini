@@ -11,96 +11,145 @@ extern CRGB leds[];
 #define NUM_LEDS_FOR_TEST 4
 #endif
 
-extern int currentLitButton; // Declare the global variable for use in this file
+extern int currentLitButton;         // Declare the global variable for use in this file
+extern int currentLastPressedButton; // Properly declare the external variable here
 
+// Modify other animation functions with similar infinite loops
 void displaySimonaStageWaitingAnimation()
 {
     const int steps = 10;
-    const uint8_t offVal = 8;                                       // 3% of 255 ≈ 8
-    const TickType_t tickDelay50 = 50 / steps / portTICK_PERIOD_MS; // delay per interpolation step
+    const uint8_t offVal = 8;
+    const TickType_t tickDelay50 = 50 / steps / portTICK_PERIOD_MS;
     CRGB offWhite = CRGB(offVal, offVal, offVal);
 
-    // Define per-color transitions: each stage: red, green, blue.
+    // Static state variables to reduce recursion and stack usage
+    static int ledIndex = 0;
+    static int colorIndex = 0;
+    static int stepIndex = 0;
+    static int animationPhase = 0;
+
     struct ColorTransition
     {
         CRGB base;
         CRGB full;
-    } colorTransitions[3] = {
+    };
+
+    static const ColorTransition colorTransitions[3] = {
         {CRGB(offVal, 0, 0), CRGB(255, 0, 0)}, // Red
         {CRGB(0, offVal, 0), CRGB(0, 255, 0)}, // Green
         {CRGB(0, 0, offVal), CRGB(0, 0, 255)}  // Blue
     };
 
-    while (currentLEDAnimationState == LED_WAITING)
+    // Reset state if we're not in waiting animation mode
+    if (currentLEDAnimationState != LED_WAITING)
     {
-        // if (currentLEDAnimationState != LED_WAITING) // abort waiting animation if state changes
-        //     break;
+        // Reset for next time
+        ledIndex = 0;
+        colorIndex = 0;
+        stepIndex = 0;
+        animationPhase = 0;
+        return;
+    }
 
-        // Ensure all LEDs are off (5% white)
+    // State machine for different animation phases
+    switch (animationPhase)
+    {
+    case 0: // Initialize
         fill_solid(leds, NUM_LEDS_FOR_TEST, offWhite);
         FastLED.show();
-        for (int i = 0; i < NUM_LEDS_FOR_TEST; i++)
+        animationPhase = 1;
+        stepIndex = 0; // Reset step index for next phase
+        return;
+
+    case 1: // Transition from offWhite to 5% base color
+    {
+        float t = stepIndex / (float)steps;
+        leds[ledIndex].r = offWhite.r + (colorTransitions[colorIndex].base.r - offWhite.r) * t;
+        leds[ledIndex].g = offWhite.g + (colorTransitions[colorIndex].base.g - offWhite.g) * t;
+        leds[ledIndex].b = offWhite.b + (colorTransitions[colorIndex].base.b - offWhite.b) * t;
+        FastLED.show();
+
+        if (++stepIndex > steps)
         {
-            // Red, then green, then blue transitions.
-            for (int c = 0; c < 3; c++)
+            stepIndex = 0; // Reset step index for next phase
+            animationPhase = 2;
+        }
+        return;
+    }
+
+    case 2: // Ramp up from 5% base color to 100% full color
+    {
+        float t = stepIndex / (float)steps;
+        leds[ledIndex].r = colorTransitions[colorIndex].base.r + (colorTransitions[colorIndex].full.r - colorTransitions[colorIndex].base.r) * t;
+        leds[ledIndex].g = colorTransitions[colorIndex].base.g + (colorTransitions[colorIndex].full.g - colorTransitions[colorIndex].base.g) * t;
+        leds[ledIndex].b = colorTransitions[colorIndex].base.b + (colorTransitions[colorIndex].full.b - colorTransitions[colorIndex].base.b) * t;
+        FastLED.show();
+
+        if (++stepIndex > steps)
+        {
+            stepIndex = 0; // Reset step index for next phase
+            animationPhase = 3;
+        }
+        return;
+    }
+
+    case 3: // Hold at 100% full color
+        leds[ledIndex] = colorTransitions[colorIndex].full;
+        FastLED.show();
+        animationPhase = 4; // Move to next phase immediately
+        return;
+
+    case 4: // Ramp down from 100% full color to 5% base color
+    {
+        float t = stepIndex / (float)steps;
+        leds[ledIndex].r = colorTransitions[colorIndex].full.r - (colorTransitions[colorIndex].full.r - colorTransitions[colorIndex].base.r) * t;
+        leds[ledIndex].g = colorTransitions[colorIndex].full.g - (colorTransitions[colorIndex].full.g - colorTransitions[colorIndex].base.g) * t;
+        leds[ledIndex].b = colorTransitions[colorIndex].full.b - (colorTransitions[colorIndex].full.b - colorTransitions[colorIndex].base.b) * t;
+        FastLED.show();
+
+        if (++stepIndex > steps)
+        {
+            stepIndex = 0; // Reset step index for next phase
+            animationPhase = 5;
+        }
+        return;
+    }
+
+    case 5: // Transition from 5% base color back to offWhite
+    {
+        float t = stepIndex / (float)steps;
+        leds[ledIndex].r = colorTransitions[colorIndex].base.r + (offWhite.r - colorTransitions[colorIndex].base.r) * t;
+        leds[ledIndex].g = colorTransitions[colorIndex].base.g + (offWhite.g - colorTransitions[colorIndex].base.g) * t;
+        leds[ledIndex].b = colorTransitions[colorIndex].base.b + (offWhite.b - colorTransitions[colorIndex].base.b) * t;
+        FastLED.show();
+
+        if (++stepIndex > steps)
+        {
+            stepIndex = 0;      // Reset step index for next phase
+            animationPhase = 6; // Move to advance phase
+        }
+        return;
+    }
+
+    case 6: // Advance to next color or LED
+        // Move to the next color in the sequence
+        if (++colorIndex >= 3)
+        {
+            colorIndex = 0;
+            // Move to the next LED when we've cycled through all colors
+            if (++ledIndex >= NUM_LEDS_FOR_TEST)
             {
-                // 1. Transition from offWhite to 5% color.
-                for (int step = 0; step <= steps; step++)
-                {
-                    if (currentLEDAnimationState != LED_WAITING)
-                        return;
-                    float t = step / (float)steps;
-                    leds[i].r = offWhite.r + (colorTransitions[c].base.r - offWhite.r) * t;
-                    leds[i].g = offWhite.g + (colorTransitions[c].base.g - offWhite.g) * t;
-                    leds[i].b = offWhite.b + (colorTransitions[c].base.b - offWhite.b) * t;
-                    FastLED.show();
-                    vTaskDelay(tickDelay50);
-                }
-                // 2. Ramp up LED from 5% to 100% for this color.
-                for (int step = 0; step <= steps; step++)
-                {
-                    if (currentLEDAnimationState != LED_WAITING)
-                        return;
-                    float t = step / (float)steps;
-                    leds[i].r = colorTransitions[c].base.r + (colorTransitions[c].full.r - colorTransitions[c].base.r) * t;
-                    leds[i].g = colorTransitions[c].base.g + (colorTransitions[c].full.g - colorTransitions[c].base.g) * t;
-                    leds[i].b = colorTransitions[c].base.b + (colorTransitions[c].full.b - colorTransitions[c].base.b) * t;
-                    FastLED.show();
-                    vTaskDelay(tickDelay50);
-                }
-                // 3. Hold at 100% color.
-                if (currentLEDAnimationState != LED_WAITING)
-                    return;
-                leds[i] = colorTransitions[c].full;
-                FastLED.show();
-                vTaskDelay(150 / portTICK_PERIOD_MS);
-                // 4. Ramp down back to 5% color.
-                for (int step = 0; step <= steps; step++)
-                {
-                    if (currentLEDAnimationState != LED_WAITING)
-                        return;
-                    float t = step / (float)steps;
-                    leds[i].r = colorTransitions[c].full.r - (colorTransitions[c].full.r - colorTransitions[c].base.r) * t;
-                    leds[i].g = colorTransitions[c].full.g - (colorTransitions[c].full.g - colorTransitions[c].base.g) * t;
-                    leds[i].b = colorTransitions[c].full.b - (colorTransitions[c].full.b - colorTransitions[c].base.b) * t;
-                    FastLED.show();
-                    vTaskDelay(tickDelay50);
-                }
-                // 5. Transition from 5% color back to offWhite.
-                for (int step = 0; step <= steps; step++)
-                {
-                    if (currentLEDAnimationState != LED_WAITING)
-                        return;
-                    float t = step / (float)steps;
-                    leds[i].r = colorTransitions[c].base.r + (offWhite.r - colorTransitions[c].base.r) * t;
-                    leds[i].g = colorTransitions[c].base.g + (offWhite.g - colorTransitions[c].base.g) * t;
-                    leds[i].b = colorTransitions[c].base.b + (offWhite.b - colorTransitions[c].base.b) * t;
-                    FastLED.show();
-                    vTaskDelay(tickDelay50);
-                }
+                ledIndex = 0;
             }
         }
+        animationPhase = 1;                  // Back to phase 1 for next color/LED
+        vTaskDelay(50 / portTICK_PERIOD_MS); // Small delay between cycles
+        return;
     }
+
+    // Add task yielding to prevent watchdog issues
+    taskYIELD();
+    vTaskDelay(tickDelay50);
 }
 
 // Updated displaySimonaStageSequenceGenerationAnimation to mimic input collection animation.
@@ -108,7 +157,7 @@ void displaySimonaStageSequenceGenerationAnimation()
 {
     extern int currentLitButton; // still use currentLitButton for this animation
     int button = currentLitButton;
-    
+
     CRGB targetColor;
     int ledIndex = button;
     switch (button)
@@ -265,7 +314,7 @@ void displaySimonaStageGameWinAnimation()
     // Define win color as purple
     CRGB winColor = CRGB(255, 100, 255);
 
-    int currentRelay = 0;  // Cycle relay index from 0 to 3
+    int currentRelay = 0; // Cycle relay index from 0 to 3
 
     // High-energy win animation: multiple pulses using a sine function for smooth brightness transitions.
     for (int pulse = 0; pulse < pulses; pulse++)
@@ -273,7 +322,7 @@ void displaySimonaStageGameWinAnimation()
         // Trigger the current relay before starting the pulse
         triggerRelay(currentRelay, 100);
         currentRelay = (currentRelay + 1) % 4;
-        
+
         for (int step = 0; step <= stepsPerPulse; step++)
         {
             float fraction = step / (float)stepsPerPulse;
@@ -393,8 +442,111 @@ void displaySimonaStageResetAnimation()
 reset_end:
     while (currentLEDAnimationState == LED_RESET)
     {
-        fill_solid(leds, NUM_LEDS_FOR_TEST, offWhite);
         FastLED.show();
         vTaskDelay(50 / portTICK_PERIOD_MS); // adjust delay as needed
+    }
+}
+
+// New function for round transition - using LED_TRANSITION state instead of LED_ROUND_TRANSITION
+// Modified round transition animation function to be stack-friendly
+void displaySimonaStageRoundTransitionAnimation()
+{
+    // Reduce local variables to minimize stack usage
+    const uint8_t pulseCount = 3;
+    const uint8_t dimVal = 8; // 3% brightness
+
+    // Use a single static iteration counter instead of nested loops
+    static uint8_t animationStep = 0;
+    static uint8_t currentPulse = 0;
+    static uint8_t currentLED = 0;
+
+    // Celebration colors - using complementary colors for interesting effect
+    static const CRGB celebrationColors[] = {
+        CRGB(255, 50, 50), // Red-orange
+        CRGB(50, 255, 50), // Green
+        CRGB(50, 50, 255), // Blue
+        CRGB(255, 255, 50) // Yellow
+    };
+
+    // Simple state machine replaces nested loops
+    switch (animationStep)
+    {
+    case 0: // Trigger relays in sequence
+        if (currentLED < 4)
+        {
+            triggerRelay(currentLED, 50);
+            currentLED++;
+            return;
+        }
+        else
+        {
+            currentLED = 0;
+            animationStep = 1;
+            return;
+        }
+
+    case 1: // Fade in LEDs
+    {
+        float factor = currentLED / 15.0f; // 15 steps
+        for (int i = 0; i < NUM_LEDS_FOR_TEST; i++)
+        {
+            CRGB color = celebrationColors[i];
+            leds[i] = CRGB(
+                color.r * factor,
+                color.g * factor,
+                color.b * factor);
+        }
+        FastLED.show();
+
+        if (++currentLED > 15)
+        {
+            currentLED = 0;
+            animationStep = 2;
+        }
+        return;
+    }
+
+    case 2: // Hold full brightness briefly
+        animationStep = 3;
+        return;
+
+    case 3: // Fade out LEDs
+    {
+        float factor = 1.0f - (currentLED / 15.0f);
+        for (int i = 0; i < NUM_LEDS_FOR_TEST; i++)
+        {
+            CRGB color = celebrationColors[i];
+            leds[i] = CRGB(
+                color.r * factor,
+                color.g * factor,
+                color.b * factor);
+        }
+        FastLED.show();
+
+        if (++currentLED > 15)
+        {
+            currentLED = 0;
+            currentPulse++;
+            if (currentPulse >= pulseCount)
+            {
+                animationStep = 4;
+            }
+            else
+            {
+                animationStep = 0; // Loop back for next pulse
+            }
+        }
+        return;
+    }
+
+    case 4: // Set to dim white and finish
+        fill_solid(leds, NUM_LEDS_FOR_TEST, CRGB(dimVal, dimVal, dimVal));
+        FastLED.show();
+
+        // Reset state for next call
+        animationStep = 0;
+        currentPulse = 0;
+        currentLED = 0;
+        return;
     }
 }

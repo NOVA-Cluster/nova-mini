@@ -10,5 +10,6 @@ void displaySimonaStageGameLostAnimation();
 void displaySimonaStageGameWinAnimation();
 void displaySimonaStageResetAnimation();
 void displaySimonaStageWaitingAnimation();
+void displaySimonaStageRoundTransitionAnimation(); // Added for round transition
 
 #endif // SIMONADISPLAYSEQUENCES_H
