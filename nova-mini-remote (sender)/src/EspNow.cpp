@@ -198,7 +198,6 @@ void espNowSetup()
 // Returns a string representing the name of a SimonaStage enum value.
 // Helps in debugging and logging message stages.
 const char* getSimonaStageName(SimonaStage stage) {
-    // ...existing code...
     switch (stage) {
         case SIMONA_STAGE_WAITING:               return "SIMONA_STAGE_WAITING";
         case SIMONA_STAGE_SEQUENCE_GENERATION:   return "SIMONA_STAGE_SEQUENCE_GENERATION";
@@ -208,6 +207,7 @@ const char* getSimonaStageName(SimonaStage stage) {
         case SIMONA_STAGE_GAME_LOST:             return "SIMONA_STAGE_GAME_LOST";
         case SIMONA_STAGE_GAME_WIN:              return "SIMONA_STAGE_GAME_WIN";
         case SIMONA_STAGE_RESET:                 return "SIMONA_STAGE_RESET";
+        case SIMONA_STAGE_ROUND_TRANSITION:      return "SIMONA_STAGE_ROUND_TRANSITION"; // Added missing stage
         default:                                 return "UNKNOWN_STAGE";
     }
 }
