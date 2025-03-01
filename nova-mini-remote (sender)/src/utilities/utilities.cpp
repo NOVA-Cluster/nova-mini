@@ -1,5 +1,26 @@
-#include "utilities.h"
+#include "utilities/utilities.h"
 #include <WiFi.h>
+#include <stdarg.h>
+#include "freertos/semphr.h"
+#include <Arduino.h>
+
+// Add mutex for thread-safe serial printing
+static SemaphoreHandle_t serialMutex;
+
+void initSafeSerial() {
+    serialMutex = xSemaphoreCreateMutex();
+}
+
+void safeSerialPrintf(const char* format, ...) {
+    xSemaphoreTake(serialMutex, portMAX_DELAY);
+    char buf[512];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buf, sizeof(buf), format, args);
+    va_end(args);
+    Serial.print(buf);
+    xSemaphoreGive(serialMutex);
+}
 
 // Helper function: printIndent
 // Prints 'indent' number of spaces to Serial. This creates a dynamic indent to avoid 

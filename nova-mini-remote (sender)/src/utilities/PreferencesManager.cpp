@@ -1,4 +1,5 @@
-#include "PreferencesManager.h"
+#include "utilities/PreferencesManager.h"
+#include <Preferences.h>
 
 Preferences PreferencesManager::prefs;
 bool PreferencesManager::isInit = false;

@@ -6,7 +6,7 @@
 #include "SimonaTypes.h"        // Added for SimonaTypes
 #include "SimonaDisplay.h"      // Added to declare display functions
 #include <ESPUI.h>              // Added for ESPUI
-#include "PreferencesManager.h" // Added to use PreferencesManager instead of direct Preferences
+#include "utilities/PreferencesManager.h" // Updated path
 
 // Helper function to convert SimonaStage enum to a string.
 const char *stageToString(SimonaStage stage)

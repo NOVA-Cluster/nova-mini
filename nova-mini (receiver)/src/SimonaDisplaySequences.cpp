@@ -1,7 +1,7 @@
 #include "SimonaDisplaySequences.h"
 #include <FastLED.h>
 #include <Arduino.h>
-#include "Utilities.h" // Added to get declaration for safeSerialPrintf
+#include "utilities/Utilities.h" // Updated path
 #include "main.h"      // Added to access LEDAnimationState and currentLEDAnimationState
 
 // Assume extern declaration for LED array from main.cpp

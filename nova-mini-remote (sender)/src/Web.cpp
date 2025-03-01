@@ -10,7 +10,7 @@
 #include "Simona.h" // Add this include
 #include "freertos/semphr.h"
 #include <Preferences.h>
-#include "PreferencesManager.h"
+#include "utilities/PreferencesManager.h"  // Updated path
 #include "EspNow.h" // Add this include for packet loss stats
 
 DNSServer dnsServer;

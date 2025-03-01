@@ -12,7 +12,7 @@
 #include <ESPUI.h>
 #include "configuration.h"
 #include "main.h"                   // Added include for initEspNowReceiver and relay control prototypes
-#include "Utilities.h"              // Added include for safeSerialPrintf and initialization
+#include "utilities/Utilities.h"    // Updated path
 #include <FastLED.h>                // Added support for SM16703 using FastLED
 #include "SimonaDisplaySequences.h" // New include for LED animation sequences
 

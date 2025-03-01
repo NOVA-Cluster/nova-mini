@@ -1,15 +1,16 @@
 #include <Arduino.h>
 #include "configuration.h" // New: Import configuration header
 #include "Simona.h"
-#include "utilities.h"
+#include "utilities/utilities.h"  // Updated path
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "MIDIControl.hpp"
+#include "midi/MIDIControl.hpp"  // Updated path to MIDI module
 #include <MIDI.h>
-#include "EspNow.h" // Now includes the declarations for espNowSetup() and espNowLoop()
-#include <WiFi.h>   // Include WiFi library
+#include "EspNow.h"   // Now includes the declarations for espNowSetup() and espNowLoop()
+#include <WiFi.h>     // Include WiFi library
 #include <WiFiType.h> // Include WiFiType library
-#include "Web.h" // Include WebInterface header
+#include "Web.h"      // Include WebInterface header
+#include "Tasks.h"    // Include Tasks.h
 // Removed captive portal include
 // #include "CaptivePortal.h" // <-- Removed
 
@@ -26,35 +27,37 @@ boolean button[4] = {0, 0, 0, 0};
 // Simona simonaGame(buttons, leds, buttonColors, ledColors);
 // Simona* simona = &simonaGame;  // Point to our game instance instead of creating a new one
 
-void gameTask(void *pvParameters);
-void buttonTask(void *pvParameters);
+// Remove gameTask and buttonTask declarations
 
-
-void WiFiEventHandler(WiFiEvent_t event) {
-  switch (event) {
-    case SYSTEM_EVENT_STA_START:
-      Serial.println("Station Mode Started");
-      break;
-    case SYSTEM_EVENT_AP_START:
-      Serial.println("AP Mode Started");
-      break;
-    case SYSTEM_EVENT_STA_CONNECTED:
-      Serial.println("Connected to AP");
-      break;
-    case SYSTEM_EVENT_AP_STACONNECTED:
-      Serial.println("Station connected to ESP32 AP");
-      break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-      Serial.println("Disconnected from AP");
-      break;
-    case SYSTEM_EVENT_AP_STADISCONNECTED:
-      Serial.println("Station disconnected from ESP32 AP");
-      break;
+void WiFiEventHandler(WiFiEvent_t event)
+{
+  switch (event)
+  {
+  case SYSTEM_EVENT_STA_START:
+    Serial.println("Station Mode Started");
+    break;
+  case SYSTEM_EVENT_AP_START:
+    Serial.println("AP Mode Started");
+    break;
+  case SYSTEM_EVENT_STA_CONNECTED:
+    Serial.println("Connected to AP");
+    break;
+  case SYSTEM_EVENT_AP_STACONNECTED:
+    Serial.println("Station connected to ESP32 AP");
+    break;
+  case SYSTEM_EVENT_STA_DISCONNECTED:
+    Serial.println("Disconnected from AP");
+    break;
+  case SYSTEM_EVENT_AP_STADISCONNECTED:
+    Serial.println("Station disconnected from ESP32 AP");
+    break;
   }
 }
 
-void checkWiFiStatus(void *parameter) {
-  while(true) {
+void checkWiFiStatus(void *parameter)
+{
+  while (true)
+  {
     Serial.printf("AP Stations connected: %d\n", WiFi.softAPgetStationNum());
     Serial.printf("WiFi Status: %s\n", WiFi.status() == WL_CONNECTED ? "Connected" : "Disconnected");
     vTaskDelay(pdMS_TO_TICKS(30000)); // Check every 30 seconds
@@ -63,8 +66,14 @@ void checkWiFiStatus(void *parameter) {
 
 void setup()
 {
-  Serial.begin(115200);     // Initialize serial communication for debugging
-  delay(2000);              // Add delay to allow the serial monitor to connect
+  Serial.begin(115200); // Initialize serial communication for debugging
+  delay(2000);          // Add delay to allow the serial monitor to connect
+
+  // Initialize safe serial printing
+  initSafeSerial();
+
+  safeSerialPrintf("Initializing Nova Mini Remote\n");
+
   randomSeed(esp_random()); // Seed the random number generator with more entropy
 
   initializeMIDI();
@@ -90,7 +99,7 @@ void setup()
 
   // Create FreeRTOS tasks
 
-  WiFi.onEvent(WiFiEventHandler);  // Register event handler
+  WiFi.onEvent(WiFiEventHandler); // Register event handler
 
   // WiFi Setup
   WiFi.mode(WIFI_AP_STA); // Set WiFi to AP+STA mode
@@ -127,36 +136,35 @@ void setup()
   // Initialize Simona singleton
   Simona::initInstance(buttons, leds, buttonColors, ledColors);
 
+  // Create tasks (functions now defined in Tasks.cpp)
   xTaskCreate(gameTask, "Game Task", 4096, NULL, 1, NULL);
   xTaskCreate(buttonTask, "Button Task", 4096, NULL, 1, NULL);
 
   // Create WiFi monitoring task
   xTaskCreate(
-    checkWiFiStatus,
-    "WiFi Monitor",
-    2048,
-    NULL,
-    1,
-    NULL
-  );
+      checkWiFiStatus,
+      "WiFi Monitor",
+      2048,
+      NULL,
+      1,
+      NULL);
 
   // Create a new FreeRTOS task for the ESPUI web interface
   xTaskCreate(
-    runEspuiTask,
-    "ESPUI",
-    8192,    // Increased stack size for web interface
-    NULL,
-    1,
-    NULL
-  );
+      runEspuiTask,
+      "ESPUI",
+      8192, // Increased stack size for web interface
+      NULL,
+      1,
+      NULL);
 
   xTaskCreate(
-    runEspuiTask,     // Function that implements the task
-    "ESPUI_Task",     // Text name for the task
-    4096,             // Stack size in words
-    NULL,             // Task input parameter
-    1,                // Priority of the task
-    NULL              // Task handle
+      runEspuiTask, // Function that implements the task
+      "ESPUI_Task", // Text name for the task
+      4096,         // Stack size in words
+      NULL,         // Task input parameter
+      1,            // Priority of the task
+      NULL          // Task handle
   );
 
   playStartupMusic(); // New: play startup music (short, under 1.5 seconds)
@@ -170,13 +178,4 @@ void loop()
   espNowLoop(); // call the renamed loop function from EspNow.cpp
 }
 
-void gameTask(void *pvParameters)
-{
-  Simona::getInstance()->runGameTask();  // Use singleton
-}
-
-void buttonTask(void *pvParameters)
-{
-  Simona::getInstance()->runButtonTask();  // Use singleton
-}
-
+// Remove gameTask and buttonTask function definitions

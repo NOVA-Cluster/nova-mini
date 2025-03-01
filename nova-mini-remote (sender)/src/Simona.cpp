@@ -1,10 +1,11 @@
 #include "Simona.h"
-#include "MIDIControl.hpp"
+#include "midi/MIDIControl.hpp"  // Updated path to MIDI module
 #include "SimonaMessage.h"
 #include "configuration.h"
 #include <ESPUI.h> // Added for ESPUI functions
 #include <Preferences.h>
-#include "PreferencesManager.h"
+#include "utilities/PreferencesManager.h"  // Updated path
+#include "EspNow.h"
 
 /*
   Based on:

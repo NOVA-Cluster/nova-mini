@@ -9,7 +9,7 @@
 #include <Arduino.h>
 #include <Preferences.h> // Add this include
 #include "configuration.h"
-#include "PreferencesManager.h" // Add this line to resolve 'PreferencesManager' not declared error
+#include "utilities/PreferencesManager.h" // Updated path
 
 // Add new control IDs
 uint16_t localMacLabel;

@@ -23,4 +23,7 @@
 #define MAX_RETRIES 5       // Maximum number of retries for sending ESP-NOW messages
 #define ACK_TIMEOUT_MS 12  // Timeout in milliseconds to wait for an acknowledgement
 
+// Task reporting interval (matching receiver implementation)
+#define REPORT_TASK_INTERVAL (120 * 1000) // How often to report task status in milliseconds
+
 #endif // CONFIGURATION_H
