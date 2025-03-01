@@ -582,7 +582,7 @@ void webLoop()
             }
             else if (SIMONA_CHEAT_MODE)
             {
-                statusMsg = "⚠️ CHEAT MODE ENABLED - Game sequence is predictable";
+                statusMsg = "⚠️ CHEAT MODE ENABLED - Game sequence is predictable ⚠️";
                 statusControl->color = ControlColor::Sunflower; // Yellow
             }
             else
