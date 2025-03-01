@@ -57,7 +57,7 @@ void checkWiFiStatus(void *parameter) {
   while(true) {
     Serial.printf("AP Stations connected: %d\n", WiFi.softAPgetStationNum());
     Serial.printf("WiFi Status: %s\n", WiFi.status() == WL_CONNECTED ? "Connected" : "Disconnected");
-    vTaskDelay(pdMS_TO_TICKS(10000)); // Check every 10 seconds
+    vTaskDelay(pdMS_TO_TICKS(30000)); // Check every 30 seconds
   }
 }
 
