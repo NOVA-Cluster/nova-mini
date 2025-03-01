@@ -17,6 +17,8 @@ DNSServer dnsServer;
 
 // Add this line to define the external variable
 bool SIMONA_CHEAT_MODE = false; // Define the external variable with default value
+bool WIRELESS_ENABLED = true;   // Make sure this is defined at global scope
+bool GAME_ENABLED = true;       // Define game enabled with default value true
 
 SemaphoreHandle_t dnsMutex = NULL;
 bool dnsServerActive = false;
@@ -25,6 +27,8 @@ Preferences preferences;
 uint16_t settingsTab;
 uint16_t espNowTab;
 uint16_t cheatModeSwitch;
+uint16_t wirelessEnabledSwitch; // Add new control ID
+uint16_t gameEnabledSwitch;     // Add new control ID
 
 // Add new control IDs
 uint16_t receiverMacText;
@@ -132,6 +136,16 @@ void switchCallback(Control *sender, int value)
         PreferencesManager::setBool(PreferencesManager::KEY_CHEAT_MODE, SIMONA_CHEAT_MODE);
         Simona::getInstance()->setCheatMode(SIMONA_CHEAT_MODE); // Use singleton directly
         Serial.printf("Cheat mode %s and saved to preferences\n", SIMONA_CHEAT_MODE ? "enabled" : "disabled");
+    }
+    else if (sender->id == wirelessEnabledSwitch) {
+        WIRELESS_ENABLED = (sender->value == "1");
+        PreferencesManager::setBool(PreferencesManager::KEY_WIRELESS_ENABLED, WIRELESS_ENABLED);
+        Serial.printf("Wireless %s and saved to preferences\n", WIRELESS_ENABLED ? "enabled" : "disabled");
+    }
+    else if (sender->id == gameEnabledSwitch) {
+        GAME_ENABLED = (sender->value == "1");
+        PreferencesManager::setBool(PreferencesManager::KEY_GAME_ENABLED, GAME_ENABLED);
+        Serial.printf("Game %s and saved to preferences\n", GAME_ENABLED ? "enabled" : "disabled");
     }
 }
 
@@ -275,9 +289,13 @@ void webSetup()
 
     // Load saved preferences
     SIMONA_CHEAT_MODE = PreferencesManager::getBool(PreferencesManager::KEY_CHEAT_MODE);
+    WIRELESS_ENABLED = PreferencesManager::getBool(PreferencesManager::KEY_WIRELESS_ENABLED, true); // Default to true
+    GAME_ENABLED = PreferencesManager::getBool(PreferencesManager::KEY_GAME_ENABLED, true); // Default to true
     receiverMacAddress = PreferencesManager::getString(PreferencesManager::KEY_RECEIVER_MAC);
 
     Serial.printf("Loaded cheat mode from preferences: %s\n", SIMONA_CHEAT_MODE ? "enabled" : "disabled");
+    Serial.printf("Loaded wireless enabled from preferences: %s\n", WIRELESS_ENABLED ? "enabled" : "disabled");
+    Serial.printf("Loaded game enabled from preferences: %s\n", GAME_ENABLED ? "enabled" : "disabled");
 
     // Create mutex for DNS operations
     dnsMutex = xSemaphoreCreateMutex();
@@ -321,6 +339,20 @@ void webSetup()
                                        ControlColor::Carrot,
                                        settingsTab,
                                        &switchCallback);
+
+    // Add wireless enabled toggle below cheat mode
+    wirelessEnabledSwitch = ESPUI.addControl(ControlType::Switcher, "Wireless Enabled",
+                                            WIRELESS_ENABLED ? "1" : "0",
+                                            ControlColor::Peterriver,
+                                            settingsTab,
+                                            &switchCallback);
+
+    // Add game enabled toggle below wireless enabled
+    gameEnabledSwitch = ESPUI.addControl(ControlType::Switcher, "Game Enabled",
+                                        GAME_ENABLED ? "1" : "0",
+                                        ControlColor::Peterriver,
+                                        settingsTab,
+                                        &switchCallback);
 
     //----- (ESPNow) -----
     // Load saved receiver MAC address

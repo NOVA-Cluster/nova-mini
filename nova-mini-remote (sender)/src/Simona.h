@@ -22,6 +22,7 @@
 #define BTN_RESET 18
 
 extern uint16_t levelProgressText;  // Declare as extern to share with other files
+extern bool GAME_ENABLED;  // Add this line near the other external declarations
 
 typedef void (*LedControlCallback)(uint8_t led, bool state);
 typedef bool (*ButtonReadCallback)(uint8_t button);

@@ -230,61 +230,69 @@ void Simona::runGameTask()
         break;
       }
       
-      // Collect player's input and update lastPressedButton on button press.
-      for (uint8_t i = 0; i <= 3; i++)
-      {
-        button[i] = readButton(buttons[i]);
-        if (button[i])
+      // Only process button inputs if game is enabled
+      if (GAME_ENABLED) {
+        // Collect player's input and update lastPressedButton on button press.
+        for (uint8_t i = 0; i <= 3; i++)
         {
-          // Only reset timer if the input was correct
-          if (bt_simonSaid[game_play] == led_simonSaid[game_play]) {
-            inputStart = millis();
-            Serial.println("Timer reset: Valid input");
-          }
-          // Reset timer on any button press.
-          inputStart = millis();
-          // Update lastPressedButton immediately.
-          simMsg.lastPressedButton = i;
-          bt_simonSaid[game_play] = i;
-
-          updateAndSendSimMsg(simMsg);
-
-          controlLed(leds[i], true);
-          Serial.print("Button Pressed: ");
-          Serial.println(buttonColors[i]);
-          playBuzzer(60 + (i - 7));
-          if (bt_simonSaid[game_play] != led_simonSaid[game_play])
+          button[i] = readButton(buttons[i]);
+          if (button[i])
           {
-            Serial.println("Incorrect button! Ending game play.");
-            lost = 1;
-            stage = SIMONA_STAGE_GAME_LOST;
-            //updateAndSendSimMsg(simMsg);
+            // Only reset timer if the input was correct
+            if (bt_simonSaid[game_play] == led_simonSaid[game_play]) {
+              inputStart = millis();
+              Serial.println("Timer reset: Valid input");
+            }
+            // Reset timer on any button press.
+            inputStart = millis();
+            // Update lastPressedButton immediately.
+            simMsg.lastPressedButton = i;
+            bt_simonSaid[game_play] = i;
 
+            updateAndSendSimMsg(simMsg);
+
+            controlLed(leds[i], true);
+            Serial.print("Button Pressed: ");
+            Serial.println(buttonColors[i]);
+            playBuzzer(60 + (i - 7));
+            if (bt_simonSaid[game_play] != led_simonSaid[game_play])
+            {
+              Serial.println("Incorrect button! Ending game play.");
+              lost = 1;
+              stage = SIMONA_STAGE_GAME_LOST;
+              //updateAndSendSimMsg(simMsg);
+
+              while (readButton(buttons[i]))
+              {
+                vTaskDelay(10 / portTICK_PERIOD_MS);
+              }
+              controlLed(leds[i], false);
+              break;
+            }
             while (readButton(buttons[i]))
             {
               vTaskDelay(10 / portTICK_PERIOD_MS);
             }
+            delay(10);
             controlLed(leds[i], false);
-            break;
-          }
-          while (readButton(buttons[i]))
-          {
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-          }
-          delay(10);
-          controlLed(leds[i], false);
-          Serial.print("LED OFF: ");
-          Serial.println(ledColors[i]);
-          game_play++;
-          if (game_play - 1 == level)
-          {
-            game_play = 1;
-            stage = SIMONA_STAGE_VERIFICATION;
-            //updateAndSendSimMsg(simMsg);
-            break;
+            Serial.print("LED OFF: ");
+            Serial.println(ledColors[i]);
+            game_play++;
+            if (game_play - 1 == level)
+            {
+              game_play = 1;
+              stage = SIMONA_STAGE_VERIFICATION;
+              //updateAndSendSimMsg(simMsg);
+              break;
+            }
           }
         }
+      } else {
+        // Game input disabled, but still send updates
+        simMsg.lastPressedButton = -1; // No button pressed
+        updateAndSendSimMsg(simMsg);
       }
+      
       vTaskDelay(10 / portTICK_PERIOD_MS);
       break;
     }
@@ -440,7 +448,8 @@ void Simona::runButtonTask()
 {
   while (true)
   {
-    if (readButton(BTN_RESET))
+    // Only process button presses if game is enabled
+    if (GAME_ENABLED && readButton(BTN_RESET))
     {
       controlLed(LED_RESET, true); // Turn on the reset LED.
       stage = SIMONA_STAGE_RESET;  // Set the new reset stage.

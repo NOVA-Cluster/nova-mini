@@ -3,6 +3,7 @@
 #include "SimonaMessage.h"
 #include "configuration.h"
 #include <Preferences.h>  // Add this include
+#include "EspNow.h"       // Make sure we include our own header file
 
 static portMUX_TYPE espNowMux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -225,6 +226,13 @@ void printSimonaMessage(const SimonaMessage &msg)
 // and resends the message up to MAX_RETRIES times if no ACK is received.
 void sendSimonaMessage(const SimonaMessage &simMsg)
 {
+    // Check if wireless is disabled
+    if (!WIRELESS_ENABLED) {
+        Serial.println("Wireless disabled - not sending message");
+        addPacketStatus(false);  // Count as lost packet
+        return;
+    }
+
     if (!espNowInitialized)
     {
         Serial.println("ESP-NOW not initialized, calling espNowSetup()...");

@@ -24,6 +24,8 @@ public:
     static constexpr const char* KEY_CHEAT_MODE = "cheat_mode";
     static constexpr const char* KEY_REMOTE_MAC = "remote_mac";
     static constexpr const char* KEY_RECEIVER_MAC = "receiver_mac";
+    static constexpr const char* KEY_WIRELESS_ENABLED = "wireless_en"; 
+    static constexpr const char* KEY_GAME_ENABLED = "game_en"; // Add new key
 
 private:
     static Preferences prefs;

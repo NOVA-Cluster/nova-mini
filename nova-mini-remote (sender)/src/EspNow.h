@@ -2,6 +2,9 @@
 #include <esp_now.h>
 #include "SimonaMessage.h"  // Replaced forward declaration with actual include
 
+// Add external variable declaration
+extern bool WIRELESS_ENABLED;
+
 void initEspNowSender();
 void espNowSetup();
 void espNowLoop();
