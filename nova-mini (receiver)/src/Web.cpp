@@ -68,6 +68,12 @@ uint16_t uptimeLabel;
 uint16_t settingsTab;
 uint16_t factoryResetText; // Control ID for factory reset
 
+// Add new global variables for dump timing
+static unsigned long dumpStartTime = 0;
+static unsigned long dumpDurationMs = 0;
+static bool dumpActive = false;
+uint16_t dumpTimeRemainingLabel; // New control ID for dump remaining time
+
 void numberCall(Control *sender, int type)
 {
     Serial.println(sender->value);
@@ -136,13 +142,33 @@ void switchCallback(Control *sender, int value)
     {
         if (sender->value == "1")
         {
-            Serial.println("Dump switch activated: triggering pooferA1 for 10 seconds");
-            triggerRelayLong(0, 10000);
+            Control* sliderCtrl = ESPUI.getControl(dumpDurationSlider);
+            String durationStr = sliderCtrl ? sliderCtrl->value : "1";
+            int durationMinutes = durationStr.toInt();
+            if (durationMinutes < 1) durationMinutes = 1;
+            if (durationMinutes > 120) durationMinutes = 120;  // Allow max 120 minutes
+            int durationMs = durationMinutes * 60 * 1000; // convert minutes to milliseconds
+
+            // Record dump start time and duration, and mark dump active.
+            dumpStartTime = millis();
+            dumpDurationMs = durationMs;
+            dumpActive = true;
+
+            Serial.printf("Dump switch activated for %d minutes (%d ms)\n", durationMinutes, durationMs);
+            // Apply duration to relevant dump relay channels
+            triggerRelayLong(0, durationMs);
+            triggerRelayLong(1, durationMs);
+            triggerRelayLong(2, durationMs);
+            triggerRelayLong(3, durationMs);
         }
         else if (sender->value == "0")
         {
-            Serial.println("Dump switch deactivated: turning off pooferA1");
+            dumpActive = false;
+            Serial.println("Dump switch deactivated");
             disableRelay(0);
+            disableRelay(1);
+            disableRelay(2);
+            disableRelay(3);
         }
     }
 
@@ -271,8 +297,12 @@ void webSetup()
     pooferA4 = ESPUI.addControl(ControlType::Button, "", "Poof 4", ControlColor::None, pooferA1, buttonCallback);
 
     // Dump tab controls
-    dumpDurationSlider = ESPUI.addControl(ControlType::Slider, "Dump Duration (secs)", "60", ControlColor::None, dumpTab, &slider);
+    dumpDurationSlider = ESPUI.addControl(ControlType::Slider, "Dump Duration (min)", "1", ControlColor::None, dumpTab, &slider);
+	ESPUI.addControl(Min, "", "1", None, dumpDurationSlider);
+	ESPUI.addControl(Max, "", "120", None, dumpDurationSlider);
     dumpSwitch = ESPUI.addControl(ControlType::Switcher, "Dump", "0", ControlColor::Alizarin, dumpTab, &switchCallback);
+    // Add new label to show remaining dump time:
+    dumpTimeRemainingLabel = ESPUI.addControl(ControlType::Label, "Dump Time Remaining", "0 s", ControlColor::Wetasphalt, dumpTab);
 
     // Add ESP-NOW tab controls
     ESPUI.addControl(
@@ -421,6 +451,22 @@ void webLoop()
             ESPUI.updateControl(statusControl);
         }
         lastStatusUpdate = currentMillis;
+    }
+
+    // Update Dump Time Remaining label if dump is active
+    if (dumpActive)
+    {
+        long remainingMs = (dumpStartTime + dumpDurationMs > currentMillis) ? (dumpStartTime + dumpDurationMs - currentMillis) : 0;
+        int remainingSeconds = remainingMs / 1000;
+        int minutesRemaining = remainingSeconds / 60;
+        int secondsRemaining = remainingSeconds % 60;
+        // Format as minutes:seconds (e.g., 2:05)
+        String remainingStr = String(minutesRemaining) + ":" + (secondsRemaining < 10 ? "0" : "") + String(secondsRemaining);
+        ESPUI.updateControlValue(dumpTimeRemainingLabel, remainingStr);
+    }
+    else
+    {
+        ESPUI.updateControlValue(dumpTimeRemainingLabel, "0:00");
     }
     // ...existing code...
 }
