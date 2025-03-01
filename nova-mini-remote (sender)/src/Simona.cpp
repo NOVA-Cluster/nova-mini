@@ -406,13 +406,14 @@ void Simona::runGameTask()
     {
       Serial.println("   -- SIMONA_STAGE_ROUND_TRANSITION --   ");
       Serial.println("Round Complete! Starting next round with more levels!");
+      updateAndSendSimMsg(simMsg);
       
       // Play round transition music before visual feedback
       playRoundTransitionMusic(m_currentRound);
       
       // Flash LEDs in sequence 20 times
       const uint8_t allLeds[] = {LED_RED, LED_GREEN, LED_BLUE, LED_YELLOW};
-      for (int j = 0; j < 5; j++) {
+      for (int j = 0; j < 6; j++) {
         for (int i = 0; i < 4; i++) {
           controlLed(allLeds[i], true);
           delay(50);

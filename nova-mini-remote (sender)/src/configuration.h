@@ -17,7 +17,7 @@
 // Game configuration constants
 #define SIMONA_INPUT_TIMEOUT_SECONDS 30
 #define SIMONA_DEBUG_TIMEOUT 0  // Set to 1 to enable timeout debug messages
-#define LEVELS_PER_ROUND_DEFAULT 3
+#define LEVELS_PER_ROUND_DEFAULT 1
 
 // ESP-NOW configuration
 #define MAX_RETRIES 5       // Maximum number of retries for sending ESP-NOW messages
