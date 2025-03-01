@@ -1,11 +1,11 @@
 #include "SimonaDisplay.h"
 #include "SimonaTypes.h" // For stage definitions if needed
 #include <Arduino.h>
-#include "main.h"                   // Added to import LEDAnimationState and currentLEDAnimationState
+#include "main.h" // Added to import LEDAnimationState and currentLEDAnimationState
 #include "SimonaDisplaySequences.h" // For LED animations
 
 extern int currentLitButton; // Add extern declaration so currentLitButton is visible
-extern int currentLastPressedButton;
+extern int currentLastPressedButton; 
 
 /*
  * displaySimonaStageWaiting
@@ -123,13 +123,11 @@ void displaySimonaStageReset(const SimonaMessage &msg)
 
 /*
  * displaySimonaStageRoundTransition
- * Shows the transition animation between rounds when a player successfully completes a round.
+ * Shows the round transition stage.
  */
 void displaySimonaStageRoundTransition(const SimonaMessage &msg)
 {
-    // Avoid excessive logging which can consume stack
     safeSerialPrintf("Stage: SIMONA_STAGE_ROUND_TRANSITION (message_id: %d, round: %d/%d)\n",
                      msg.message_id, msg.currentRound, msg.maxRounds);
-
-    currentLEDAnimationState = LED_TRANSITION; // Use existing LED_TRANSITION state
+    currentLEDAnimationState = LED_ROUND_TRANSITION; // Set to round transition state!
 }

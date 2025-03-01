@@ -451,6 +451,8 @@ reset_end:
 // Modified round transition animation function to be stack-friendly
 void displaySimonaStageRoundTransitionAnimation()
 {
+    safeSerialPrintf("********** Starting round transition animation\n");
+
     // Reduce local variables to minimize stack usage
     const uint8_t pulseCount = 3;
     const uint8_t dimVal = 8; // 3% brightness

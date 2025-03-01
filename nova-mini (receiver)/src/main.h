@@ -27,7 +27,7 @@ enum LEDAnimationState {
     LED_GAME_LOST,            // For displaySimonaStageGameLost
     LED_GAME_WIN,             // For displaySimonaStageGameWin
     LED_RESET,                // For displaySimonaStageReset
-    LED_ROUND_TRANSITION      // Add new state for round transition
+    LED_ROUND_TRANSITION      // Added for round transition
 };
 
 extern volatile LEDAnimationState currentLEDAnimationState;

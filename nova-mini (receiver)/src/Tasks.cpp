@@ -142,6 +142,9 @@ void TaskFastLED(void *pvParameters)
             case LED_RESET:
                 displaySimonaStageResetAnimation();
                 break;
+            case LED_ROUND_TRANSITION:
+                displaySimonaStageRoundTransitionAnimation();
+                break;
             default:
                 // ...existing default code...
                 break;
