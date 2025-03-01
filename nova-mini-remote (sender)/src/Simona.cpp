@@ -164,7 +164,7 @@ void Simona::runGameTask()
       }
       Serial.println();
 
-      delay(250);
+      delay(200);
       Serial.print("Sequence: ");
       for (uint8_t i = 1; i <= level; i++)
       {
@@ -310,7 +310,7 @@ void Simona::runGameTask()
       }
       updateAndSendSimMsg(simMsg);
 
-      delay(500);
+      delay(400);
 
       if (!lost) {
         inputStart = millis();

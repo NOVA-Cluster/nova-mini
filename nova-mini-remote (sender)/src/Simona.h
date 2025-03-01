@@ -5,21 +5,10 @@
 #include "EspNow.h"         // Added include for EspNow
 #include "SimonaTypes.h"    // New: include shared types
 #include <ESPUI.h>          // Added include for ESPUI
-#include "configuration.h"  // Add this include for SIMONA_INPUT_TIMEOUT_SECONDS
+#include "configuration.h"  // Include configuration.h for pin definitions
 #include "Web.h"            // Add this include for SIMONA_CHEAT_MODE
 
-// Pin Definitions for LEDs and Buttons
-#define LED_RED 23
-#define LED_GREEN 25
-#define LED_BLUE 26
-#define LED_YELLOW 27
-#define LED_RESET 32
-
-#define BTN_RED 4
-#define BTN_GREEN 5
-#define BTN_BLUE 13
-#define BTN_YELLOW 14
-#define BTN_RESET 18
+// Remove all pin definitions - they should be in configuration.h
 
 extern uint16_t levelProgressText;  // Declare as extern to share with other files
 extern bool GAME_ENABLED;  // Add this line near the other external declarations
