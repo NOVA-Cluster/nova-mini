@@ -7,3 +7,8 @@ void espNowSetup();
 void espNowLoop();
 void sendEspNowMessage();
 void sendSimonaMessage(const SimonaMessage &simMsg); // Declaration remains the same
+
+// New function to get packet loss stats
+float getPacketLossPercentage();
+int getTotalMessagesSent();
+int getTotalMessagesLost();

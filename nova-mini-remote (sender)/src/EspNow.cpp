@@ -12,6 +12,91 @@ uint32_t currentMessageId = 0;
 uint8_t targetAddress[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};  // Will be updated with saved address
 bool espNowInitialized = false;
 
+// Add packet loss tracking
+#define PACKET_HISTORY_SIZE 1000  // Store up to 1000 packet statuses
+#define PACKET_WINDOW_MS (5 * 60 * 1000)  // 5 minutes in milliseconds
+
+struct PacketStatus {
+    uint32_t timestamp;
+    bool ackReceived;
+};
+
+// Circular buffer for packet history
+static PacketStatus packetHistory[PACKET_HISTORY_SIZE];
+static int packetHistoryIndex = 0;
+static int packetHistoryCount = 0;
+static int totalMessagesSent = 0;
+static int totalMessagesLost = 0;
+
+// Add a packet to the history
+void addPacketStatus(bool ackReceived) {
+    portENTER_CRITICAL(&espNowMux);
+    
+    packetHistory[packetHistoryIndex].timestamp = millis();
+    packetHistory[packetHistoryIndex].ackReceived = ackReceived;
+    
+    totalMessagesSent++;
+    if (!ackReceived) {
+        totalMessagesLost++;
+    }
+    
+    // Move to next position in circular buffer
+    packetHistoryIndex = (packetHistoryIndex + 1) % PACKET_HISTORY_SIZE;
+    
+    // Update count until buffer is full
+    if (packetHistoryCount < PACKET_HISTORY_SIZE) {
+        packetHistoryCount++;
+    }
+    
+    portEXIT_CRITICAL(&espNowMux);
+}
+
+float getPacketLossPercentage() {
+    uint32_t currentTime = millis();
+    int windowPackets = 0;
+    int windowLost = 0;
+
+    portENTER_CRITICAL(&espNowMux);
+    
+    // Count packets in the 5-minute window
+    for (int i = 0; i < packetHistoryCount; i++) {
+        int idx = (packetHistoryIndex - 1 - i + PACKET_HISTORY_SIZE) % PACKET_HISTORY_SIZE;
+        
+        // Check if packet is within the last 5 minutes, accounting for millis() overflow
+        uint32_t packetAge;
+        if (currentTime >= packetHistory[idx].timestamp) {
+            packetAge = currentTime - packetHistory[idx].timestamp;
+        } else {
+            // millis() has overflowed
+            packetAge = (0xFFFFFFFF - packetHistory[idx].timestamp) + currentTime + 1;
+        }
+        
+        // Only count packets within the 5-minute window
+        if (packetAge <= PACKET_WINDOW_MS) {
+            windowPackets++;
+            if (!packetHistory[idx].ackReceived) {
+                windowLost++;
+            }
+        }
+    }
+    
+    portEXIT_CRITICAL(&espNowMux);
+    
+    // Calculate percentage
+    if (windowPackets > 0) {
+        return (windowLost * 100.0) / windowPackets;
+    }
+    return 0.0;  // No packets in window
+}
+
+int getTotalMessagesSent() {
+    return totalMessagesSent;
+}
+
+int getTotalMessagesLost() {
+    return totalMessagesLost;
+}
+
 // Add this helper function to convert MAC string to bytes
 bool macStringToBytes(const String& macStr, uint8_t* bytes) {
     if (macStr.length() != 17) return false;  // XX:XX:XX:XX:XX:XX
@@ -116,6 +201,7 @@ void sendSimonaMessage(const SimonaMessage &simMsg)
         if (!espNowInitialized)
         {
             Serial.println("Failed to initialize ESP-NOW");
+            addPacketStatus(false);  // Count as lost packet
             return;
         }
     }
@@ -134,6 +220,7 @@ void sendSimonaMessage(const SimonaMessage &simMsg)
         Serial.println("Message sent, awaiting ACK...");
     else {
         Serial.println("Error sending message.");
+        addPacketStatus(false);  // Count as lost packet
         return;
     }
     
@@ -159,6 +246,9 @@ void sendSimonaMessage(const SimonaMessage &simMsg)
             break;
         }
     }
+    
+    // Record packet status after all retries
+    addPacketStatus(ackReceived);
     
     if (!ackReceived) {
         if (retries > 0) {
