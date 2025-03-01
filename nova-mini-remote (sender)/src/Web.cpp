@@ -34,6 +34,7 @@ uint16_t gameEnabledSwitch;     // Add new control ID
 uint16_t receiverMacText;
 uint16_t localMacLabel;
 uint16_t savedReceiverMacLabel; // Add new control ID for saved MAC display
+uint16_t factoryResetText;      // Add new control ID for factory reset
 String receiverMacAddress = "";
 
 // Add packet loss label control ID
@@ -137,12 +138,14 @@ void switchCallback(Control *sender, int value)
         Simona::getInstance()->setCheatMode(SIMONA_CHEAT_MODE); // Use singleton directly
         Serial.printf("Cheat mode %s and saved to preferences\n", SIMONA_CHEAT_MODE ? "enabled" : "disabled");
     }
-    else if (sender->id == wirelessEnabledSwitch) {
+    else if (sender->id == wirelessEnabledSwitch)
+    {
         WIRELESS_ENABLED = (sender->value == "1");
         PreferencesManager::setBool(PreferencesManager::KEY_WIRELESS_ENABLED, WIRELESS_ENABLED);
         Serial.printf("Wireless %s and saved to preferences\n", WIRELESS_ENABLED ? "enabled" : "disabled");
     }
-    else if (sender->id == gameEnabledSwitch) {
+    else if (sender->id == gameEnabledSwitch)
+    {
         GAME_ENABLED = (sender->value == "1");
         PreferencesManager::setBool(PreferencesManager::KEY_GAME_ENABLED, GAME_ENABLED);
         Serial.printf("Game %s and saved to preferences\n", GAME_ENABLED ? "enabled" : "disabled");
@@ -280,6 +283,59 @@ void textCallback(Control *sender, int type)
             ESPUI.updateControl(statusControl);
         }
     }
+    else if (sender->id == factoryResetText)
+    {
+        // Get status control for feedback
+        Control *statusControl = ESPUI.getControl(status);
+        if (!statusControl)
+        {
+            Serial.println("ERROR: Could not get status control!");
+            return;
+        }
+
+        // Process reset command
+        if (sender->value == "RESET" && type == 10)
+        { // Type 10 means Enter was pressed
+            Serial.println("FACTORY RESET COMMAND RECEIVED");
+
+            // Show status
+            ESPUI.updateControlValue(status, "⚠️ Factory Reset in progress - device will reboot");
+            statusControl->color = ControlColor::Alizarin;
+            ESPUI.updateControl(statusControl);
+
+            // Clear the input field
+            ESPUI.updateControlValue(factoryResetText, "");
+
+            // Give UI time to update
+            delay(1000);
+
+            // Clear all preferences
+            Serial.println("Clearing all preferences");
+            Preferences preferences;
+            preferences.begin("nova", false);
+            preferences.clear();
+            preferences.end();
+
+            // Reboot
+            Serial.println("Rebooting device");
+            ESP.restart();
+        }
+        else if (!sender->value.isEmpty() && sender->value != "RESET")
+        {
+            // Invalid input
+            ESPUI.updateControlValue(status, "❌ Only 'RESET' (all caps) is accepted");
+            statusControl->color = ControlColor::Alizarin;
+            ESPUI.updateControl(statusControl);
+        }
+        else if (sender->value.isEmpty())
+        {
+            // Empty field - no message
+            ESPUI.updateControlValue(status, "Type 'RESET' to factory reset");
+            statusControl->color = ControlColor::Wetasphalt;
+            ESPUI.updateControl(statusControl);
+        }
+    }
+
     Serial.println("=== End Text Callback ===\n");
 }
 
@@ -290,7 +346,7 @@ void webSetup()
     // Load saved preferences
     SIMONA_CHEAT_MODE = PreferencesManager::getBool(PreferencesManager::KEY_CHEAT_MODE);
     WIRELESS_ENABLED = PreferencesManager::getBool(PreferencesManager::KEY_WIRELESS_ENABLED, true); // Default to true
-    GAME_ENABLED = PreferencesManager::getBool(PreferencesManager::KEY_GAME_ENABLED, true); // Default to true
+    GAME_ENABLED = PreferencesManager::getBool(PreferencesManager::KEY_GAME_ENABLED, true);         // Default to true
     receiverMacAddress = PreferencesManager::getString(PreferencesManager::KEY_RECEIVER_MAC);
 
     Serial.printf("Loaded cheat mode from preferences: %s\n", SIMONA_CHEAT_MODE ? "enabled" : "disabled");
@@ -342,17 +398,41 @@ void webSetup()
 
     // Add wireless enabled toggle below cheat mode
     wirelessEnabledSwitch = ESPUI.addControl(ControlType::Switcher, "Wireless Enabled",
-                                            WIRELESS_ENABLED ? "1" : "0",
-                                            ControlColor::Peterriver,
-                                            settingsTab,
-                                            &switchCallback);
+                                             WIRELESS_ENABLED ? "1" : "0",
+                                             ControlColor::Peterriver,
+                                             settingsTab,
+                                             &switchCallback);
 
     // Add game enabled toggle below wireless enabled
     gameEnabledSwitch = ESPUI.addControl(ControlType::Switcher, "Game Enabled",
-                                        GAME_ENABLED ? "1" : "0",
-                                        ControlColor::Peterriver,
-                                        settingsTab,
-                                        &switchCallback);
+                                         GAME_ENABLED ? "1" : "0",
+                                         ControlColor::Peterriver,
+                                         settingsTab,
+                                         &switchCallback);
+
+    // Remove the separator line - it was ugly
+
+    // Add Factory Reset warning and instructions
+    ESPUI.addControl(
+        ControlType::Label,
+        "Factory Reset",
+        "⚠️ <strong>WARNING: Factory Reset</strong> ⚠️<br><br>"
+        "To reset all settings to default values:<br>"
+        "1. Type the word <strong>RESET</strong> (all caps) in the field below<br>"
+        "2. Press Enter to confirm<br><br>"
+        "This will erase all saved settings and reboot the device.<br>"
+        "MAC addresses, wireless settings, and game preferences will be reset to defaults.",
+        ControlColor::Alizarin,
+        settingsTab);
+
+    // Add the factory reset text field
+    factoryResetText = ESPUI.addControl(
+        ControlType::Text,
+        "Enter 'RESET' to restore defaults",
+        "", // Start with empty field
+        ControlColor::Alizarin,
+        settingsTab,
+        &textCallback);
 
     //----- (ESPNow) -----
     // Load saved receiver MAC address
@@ -456,6 +536,7 @@ void webLoop()
     static long lastDnsCheck = 0;
     static bool switchState = false;
     static long lastPacketLossUpdate = 0;
+    static long lastStatusUpdate = 0; // New variable for status updates
 
     // Process DNS requests at most every 250ms with mutex protection
     if (millis() - lastDnsCheck >= 250)
@@ -480,6 +561,53 @@ void webLoop()
         lastDnsCheck = millis();
     }
 
+    // Update system status message every second
+    if (millis() - lastStatusUpdate >= 1000)
+    {
+        Control *statusControl = ESPUI.getControl(status);
+        if (statusControl)
+        {
+            // Determine status message based on priority
+            String statusMsg;
+
+            if (!WIRELESS_ENABLED)
+            {
+                statusMsg = "⚠️ WIRELESS DISABLED - No messages being sent";
+                statusControl->color = ControlColor::Alizarin; // Red
+            }
+            else if (!GAME_ENABLED)
+            {
+                statusMsg = "⚠️ GAME DISABLED - Game inputs ignored";
+                statusControl->color = ControlColor::Alizarin; // Red
+            }
+            else if (SIMONA_CHEAT_MODE)
+            {
+                statusMsg = "⚠️ CHEAT MODE ENABLED - Game sequence is predictable";
+                statusControl->color = ControlColor::Sunflower; // Yellow
+            }
+            else
+            {
+                // Check packet loss
+                float lossPercentage = getPacketLossPercentage();
+                if (lossPercentage > 2.0)
+                {
+                    statusMsg = String("⚠️ HIGH PACKET LOSS: ") + String(lossPercentage, 1) + "% in the last 5 minutes";
+                    statusControl->color = ControlColor::Peterriver; // Blue
+                }
+                else
+                {
+                    statusMsg = "🐹 System Normal 🐹";
+                    statusControl->color = ControlColor::Emerald; // Green
+                }
+            }
+
+            ESPUI.updateControlValue(status, statusMsg);
+            ESPUI.updateControl(statusControl);
+        }
+
+        lastStatusUpdate = millis();
+    }
+
     // Update packet loss stats every second
     if (millis() - lastPacketLossUpdate >= 1000)
     {
@@ -492,7 +620,7 @@ void webLoop()
         snprintf(buffer, sizeof(buffer),
                  "Last 5min: %.2f%% loss (%d msgs) | Total: %.2f%% loss (%d/%d msgs)",
                  lossPercentage,
-                 windowMessages,  // Now shows actual count in the window
+                 windowMessages, // Now shows actual count in the window
                  totalSent > 0 ? (totalLost * 100.0) / totalSent : 0.0,
                  totalLost,
                  totalSent);
