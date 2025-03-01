@@ -6,7 +6,7 @@
 #include "SimonaTypes.h"   // Added for SimonaTypes
 #include "SimonaDisplay.h" // Added to declare display functions
 #include <ESPUI.h>         // Added for ESPUI
-#include <Preferences.h>   // Add this include
+#include "PreferencesManager.h" // Added to use PreferencesManager instead of direct Preferences
 
 // Helper function to convert SimonaStage enum to a string.
 const char *stageToString(SimonaStage stage)
@@ -48,11 +48,8 @@ void updatePeerList(const uint8_t *mac)
     snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    // Save this MAC to preferences using the same key as the web interface
-    Preferences preferences;
-    preferences.begin("nova", false);
-    preferences.putString("remote_mac", macStr); // Changed from "last_remote" to "remote_mac"
-    preferences.end();
+    // Save this MAC using PreferencesManager with key KEY_REMOTE_MAC
+    PreferencesManager::setString(PreferencesManager::KEY_REMOTE_MAC, macStr);
 
     if (!connectedRemotes.indexOf(macStr))
     {
@@ -168,11 +165,8 @@ void initEspNowReceiver()
         return;
     }
 
-    // Load MAC address from preferences - use same key as web interface
-    Preferences preferences;
-    preferences.begin("nova", false);
-    String remoteMacAddress = preferences.getString("remote_mac", ""); // Changed from "last_remote" to "remote_mac"
-    preferences.end();
+    // Load MAC address from PreferencesManager using KEY_REMOTE_MAC
+    String remoteMacAddress = PreferencesManager::getString(PreferencesManager::KEY_REMOTE_MAC, "");
 
     if (!remoteMacAddress.isEmpty())
     {

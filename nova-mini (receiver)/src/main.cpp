@@ -175,7 +175,7 @@ void setup()
     }
 
     String macAddress = WiFi.macAddress();
-    String AP_String = "NOVAMINI_" + getLastFourOfMac(); // Replace existing MAC parsing code with this line
+    String AP_String = "NovaMini_" + getLastFourOfMac(); // Replace existing MAC parsing code with this line
 
     Serial.printf("Setting WiFi mode to WIFI_AP_STA... ");
 
