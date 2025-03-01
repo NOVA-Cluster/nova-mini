@@ -1,11 +1,11 @@
 #include "EspNow.h"
 #include <WiFi.h>
 #include <esp_now.h>
-#include "main.h"          // For triggerRelay(), etc.
-#include "SimonaMessage.h" // Changed from PooferMessage.h
-#include "SimonaTypes.h"   // Added for SimonaTypes
-#include "SimonaDisplay.h" // Added to declare display functions
-#include <ESPUI.h>         // Added for ESPUI
+#include "main.h"               // For triggerRelay(), etc.
+#include "SimonaMessage.h"      // Changed from PooferMessage.h
+#include "SimonaTypes.h"        // Added for SimonaTypes
+#include "SimonaDisplay.h"      // Added to declare display functions
+#include <ESPUI.h>              // Added for ESPUI
 #include "PreferencesManager.h" // Added to use PreferencesManager instead of direct Preferences
 
 // Helper function to convert SimonaStage enum to a string.
@@ -89,18 +89,18 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 
         safeSerialPrintf("*** Received message_id: %d ***\n", receivedMsg.message_id);
 
-                // Print full message content in human readable form.
-                safeSerialPrintf("Message contents:\n");
-                safeSerialPrintf("  message_id: %d\n", receivedMsg.message_id);
-                // Updated to print the enum name
-                safeSerialPrintf("  stage: %s\n", stageToString(receivedMsg.stage));
-                safeSerialPrintf("  level: %d\n", receivedMsg.level);
-                safeSerialPrintf("  gamePlay: %d\n", receivedMsg.gamePlay);
-                safeSerialPrintf("  lost: %d\n", receivedMsg.lost);
-                safeSerialPrintf("  litButton: %d\n", receivedMsg.litButton);
-                safeSerialPrintf("  lastPressedButton: %d\n", receivedMsg.lastPressedButton);
+        // Print full message content in human readable form.
+        safeSerialPrintf("Message contents:\n");
+        safeSerialPrintf("  message_id: %d\n", receivedMsg.message_id);
+        // Updated to print the enum name
+        safeSerialPrintf("  stage: %s\n", stageToString(receivedMsg.stage));
+        safeSerialPrintf("  level: %d\n", receivedMsg.level);
+        safeSerialPrintf("  gamePlay: %d\n", receivedMsg.gamePlay);
+        safeSerialPrintf("  lost: %d\n", receivedMsg.lost);
+        safeSerialPrintf("  litButton: %d\n", receivedMsg.litButton);
+        safeSerialPrintf("  lastPressedButton: %d\n", receivedMsg.lastPressedButton);
         /*
-        */
+         */
 
         // Call the display function for the corresponding stage.
         switch (receivedMsg.stage)
@@ -153,7 +153,6 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     else
     {
         safeSerialPrintf("*** Received message *** : Wrong length. Received: %d, Expected: %d\n", len, sizeof(SimonaMessage));
-
     }
 }
 
@@ -165,16 +164,23 @@ void initEspNowReceiver()
         return;
     }
 
-    // Load MAC address from PreferencesManager using KEY_REMOTE_MAC
-    String remoteMacAddress = PreferencesManager::getString(PreferencesManager::KEY_REMOTE_MAC, "");
+    // Load saved MAC address from PreferencesManager using KEY_REMOTE_MAC
+    String savedMac = PreferencesManager::getString(PreferencesManager::KEY_REMOTE_MAC, "");
 
-    if (!remoteMacAddress.isEmpty())
+    if (!savedMac.isEmpty())
     {
-        // Convert MAC string to bytes
+        // Convert saved MAC string to bytes
         uint8_t remoteMac[6];
-        sscanf(remoteMacAddress.c_str(), "%02hhX:%02hhX:%02hhX:%02hhX:%02hhX:%02hhX",
+        sscanf(savedMac.c_str(), "%02hhX:%02hhX:%02hhX:%02hhX:%02hhX:%02hhX",
                &remoteMac[0], &remoteMac[1], &remoteMac[2],
                &remoteMac[3], &remoteMac[4], &remoteMac[5]);
+
+        // Delete existing peer and check for errors
+        esp_err_t delRes = esp_now_del_peer(remoteMac);
+        if (delRes != ESP_OK && delRes != ESP_ERR_ESPNOW_NOT_FOUND)
+        {
+            safeSerialPrintf("Warning: esp_now_del_peer() returned %s\n", esp_err_to_name(delRes));
+        }
 
         // Add peer using saved MAC
         esp_now_peer_info_t peerInfo = {};
@@ -182,13 +188,11 @@ void initEspNowReceiver()
         peerInfo.channel = 0;
         peerInfo.encrypt = false;
 
-        esp_now_del_peer(remoteMac); // Remove if exists
         esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
         if (addPeerResult == ESP_OK)
         {
-            safeSerialPrintf("ESP-NOW peer configured: %s\n", remoteMacAddress.c_str());
-            // Update the UI
-            connectedRemotes = remoteMacAddress;
+            safeSerialPrintf("ESP-NOW peer configured: %s\n", savedMac.c_str());
+            connectedRemotes = savedMac;
             ESPUI.updateControlValue(connectedRemotesLabel, connectedRemotes);
         }
         else
@@ -201,6 +205,11 @@ void initEspNowReceiver()
         safeSerialPrintf("No remote MAC address configured\n");
     }
 
+    // Register the receive callback.
     esp_now_register_recv_cb(onDataRecv);
+
+    // Note: Currently, there is no mechanism to detect peer disconnection.
+    // Consider implementing a periodic peer monitoring routine to detect stale peers and reinitialize them if needed.
+
     safeSerialPrintf("ESP-NOW Receiver initialized\n");
 }
