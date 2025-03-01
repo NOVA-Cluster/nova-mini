@@ -51,7 +51,7 @@ void updatePeerList(const uint8_t *mac)
     // Save this MAC using PreferencesManager with key KEY_REMOTE_MAC
     PreferencesManager::setString(PreferencesManager::KEY_REMOTE_MAC, macStr);
 
-    if (!connectedRemotes.indexOf(macStr))
+    if (connectedRemotes.indexOf(macStr) == -1)
     {
         if (connectedRemotes == "No remotes connected")
         {
