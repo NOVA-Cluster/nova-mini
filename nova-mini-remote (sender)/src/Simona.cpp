@@ -404,7 +404,7 @@ void Simona::runGameTask()
       
       // Flash LEDs in sequence 20 times
       const uint8_t allLeds[] = {LED_RED, LED_GREEN, LED_BLUE, LED_YELLOW};
-      for (int j = 0; j < 10; j++) {
+      for (int j = 0; j < 5; j++) {
         for (int i = 0; i < 4; i++) {
           controlLed(allLeds[i], true);
           delay(50);
