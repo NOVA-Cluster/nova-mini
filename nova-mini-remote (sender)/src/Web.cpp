@@ -454,12 +454,13 @@ void webLoop()
         float lossPercentage = getPacketLossPercentage();
         int totalSent = getTotalMessagesSent();
         int totalLost = getTotalMessagesLost();
+        int windowMessages = getMessagesInTimeWindow(); // Get messages in 5-min window
 
         char buffer[100];
         snprintf(buffer, sizeof(buffer),
                  "Last 5min: %.2f%% loss (%d msgs) | Total: %.2f%% loss (%d/%d msgs)",
                  lossPercentage,
-                 totalSent,
+                 windowMessages,  // Now shows actual count in the window
                  totalSent > 0 ? (totalLost * 100.0) / totalSent : 0.0,
                  totalLost,
                  totalSent);

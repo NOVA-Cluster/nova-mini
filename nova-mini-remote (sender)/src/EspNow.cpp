@@ -89,6 +89,37 @@ float getPacketLossPercentage() {
     return 0.0;  // No packets in window
 }
 
+// Add this new function to count messages in the time window
+int getMessagesInTimeWindow() {
+    uint32_t currentTime = millis();
+    int windowPackets = 0;
+
+    portENTER_CRITICAL(&espNowMux);
+    
+    // Count packets in the 5-minute window
+    for (int i = 0; i < packetHistoryCount; i++) {
+        int idx = (packetHistoryIndex - 1 - i + PACKET_HISTORY_SIZE) % PACKET_HISTORY_SIZE;
+        
+        // Check if packet is within the last 5 minutes, accounting for millis() overflow
+        uint32_t packetAge;
+        if (currentTime >= packetHistory[idx].timestamp) {
+            packetAge = currentTime - packetHistory[idx].timestamp;
+        } else {
+            // millis() has overflowed
+            packetAge = (0xFFFFFFFF - packetHistory[idx].timestamp) + currentTime + 1;
+        }
+        
+        // Only count packets within the 5-minute window
+        if (packetAge <= PACKET_WINDOW_MS) {
+            windowPackets++;
+        }
+    }
+    
+    portEXIT_CRITICAL(&espNowMux);
+    
+    return windowPackets;
+}
+
 int getTotalMessagesSent() {
     return totalMessagesSent;
 }

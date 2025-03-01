@@ -12,3 +12,4 @@ void sendSimonaMessage(const SimonaMessage &simMsg); // Declaration remains the 
 float getPacketLossPercentage();
 int getTotalMessagesSent();
 int getTotalMessagesLost();
+int getMessagesInTimeWindow(); // New function to get count in 5-min window
