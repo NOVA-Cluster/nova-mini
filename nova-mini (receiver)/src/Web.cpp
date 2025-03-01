@@ -8,6 +8,8 @@
 #include <ESPUI.h>
 #include <Arduino.h>
 #include <Preferences.h> // Add this include
+#include "configuration.h"
+#include "PreferencesManager.h" // Add this line to resolve 'PreferencesManager' not declared error
 
 // Add new control IDs
 uint16_t localMacLabel;
@@ -56,6 +58,15 @@ uint16_t mainDrunktardSwitch;
 uint16_t pooferA1, pooferA2, pooferA3, pooferA4;
 uint16_t dumpSwitch;
 uint16_t dumpDurationSlider;
+uint16_t poofersEnabledSwitch; // New control ID for "Enable Poofers"
+
+// Global declarations
+AsyncWebServer webServer(80);
+uint16_t sysInfoTab;
+uint16_t deviceInfoLabel;
+uint16_t uptimeLabel;
+uint16_t settingsTab;
+uint16_t factoryResetText; // Control ID for factory reset
 
 void numberCall(Control *sender, int type)
 {
@@ -134,7 +145,16 @@ void switchCallback(Control *sender, int value)
             disableRelay(0);
         }
     }
-    // ...existing behavior...
+
+    if (sender->id == poofersEnabledSwitch)
+    {
+        // Update the global flag declared in main.cpp
+        extern bool poofersEnabled;
+        poofersEnabled = (sender->value == "1");
+        Serial.printf("Poofers %s\n", poofersEnabled ? "enabled" : "disabled");
+        return;
+    }
+    // ...existing switchCallback code...
 }
 
 void selectExample(Control *sender, int value)
@@ -198,6 +218,30 @@ void textCallback(Control *sender, int type)
             statusControl->color = ControlColor::Alizarin;
             ESPUI.updateControl(statusControl);
         }
+    }
+}
+
+// Add new callback for factory reset text field
+void factoryResetTextCallback(Control *sender, int type)
+{
+    // When Enter is pressed (type 10) and input equals "RESET"
+    if (sender->value == "RESET" && type == 10)
+    {
+        // Provide UI feedback and delay for update
+        Control *statusControl = ESPUI.getControl(status);
+        if (statusControl)
+        {
+            ESPUI.updateControlValue(status, "⚠️ Factory Reset in progress...");
+            statusControl->color = ControlColor::Alizarin;
+            ESPUI.updateControl(statusControl);
+        }
+        delay(1000);
+        // Clear preferences using direct Preferences API
+        Preferences p;
+        p.begin(PreferencesManager::NAMESPACE, false);
+        p.clear();
+        p.end();
+        ESP.restart();
     }
 }
 
@@ -278,9 +322,49 @@ void webSetup()
         ControlColor::Peterriver,
         espNowTab);
 
+    // Create "System Info" tab
+    sysInfoTab = ESPUI.addControl(ControlType::Tab, "System Info", "System Info");
+
+    // Add Device Info label
+    deviceInfoLabel = ESPUI.addControl(ControlType::Label, "Device Info", deviceInfo, ControlColor::None, sysInfoTab);
+
+    // Add Uptime label
+    uptimeLabel = ESPUI.addControl(ControlType::Label, "Uptime", "0s", ControlColor::Emerald, sysInfoTab);
+
+    // Add new Settings tab
+    settingsTab = ESPUI.addControl(ControlType::Tab, "Settings", "Settings");
+
+    // Add Factory Reset instructions label
+    ESPUI.addControl(
+        ControlType::Label,
+        "Factory Reset",
+        "⚠️ <strong>WARNING:</strong> Factory Reset will erase all settings.<br>"
+        "Type <strong>RESET</strong> (all caps) below and press Enter to reset.",
+        ControlColor::Alizarin,
+        settingsTab);
+
+    // Add Factory Reset text field with the new callback
+    factoryResetText = ESPUI.addControl(
+        ControlType::Text,
+        "Reset Device",
+        "",
+        ControlColor::Alizarin,
+        settingsTab,
+        &factoryResetTextCallback);
+
+    // Add Enable Poofers toggle below other settings controls:
+    poofersEnabledSwitch = ESPUI.addControl(
+        ControlType::Switcher,
+        "Enable Poofers",
+        "1", // Default enabled
+        ControlColor::Emerald,
+        settingsTab,
+        &switchCallback);
+
     ESPUI.captivePortal = true;
     ESPUI.list();
     ESPUI.begin("NOVA Mini");
+    webServer.begin();
     Serial.println("Leaving webSetup()");
 }
 
@@ -290,6 +374,7 @@ void webSetup()
 void webLoop()
 {
     static unsigned long lastUpdate = 0;
+    static unsigned long lastStatusUpdate = 0; // Declare lastStatusUpdate here
     unsigned long currentMillis = millis();
 
     // Update every 1000ms (1 second)
@@ -311,8 +396,41 @@ void webLoop()
         // Update the display
         ESPUI.updateControlValue(controlMillis, formattedTime);
 
+        // Update uptime on web UI
+        String uptimeStr = String(totalSeconds) + " seconds";
+        ESPUI.updateControlValue(uptimeLabel, uptimeStr);
+
         lastUpdate = currentMillis;
     }
 
-    // ...rest of existing webLoop code...
+    if (currentMillis - lastStatusUpdate >= 1000)
+    {
+        Control *statusControl = ESPUI.getControl(status);
+        if (statusControl)
+        {
+            String statusMsg;
+
+            // Append poofers status based on global flag.
+            extern bool poofersEnabled;
+            if (poofersEnabled)
+                statusMsg += "Poofers: 🐹";
+            else
+                statusMsg += "Poofers: 💩";
+
+            ESPUI.updateControlValue(status, statusMsg);
+            ESPUI.updateControl(statusControl);
+        }
+        lastStatusUpdate = currentMillis;
+    }
+    // ...existing code...
+}
+
+// Optionally, a task to run webLoop could be created
+void runWebTask(void *pvParameters)
+{
+    while (1)
+    {
+        webLoop();
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
 }

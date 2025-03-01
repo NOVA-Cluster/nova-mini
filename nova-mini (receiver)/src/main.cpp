@@ -34,16 +34,20 @@ void TaskPulseRelay(void *pvParameters);
 void TaskFastLED(void *pvParameters); // New task for SM16703 LED control using FastLED
 
 DNSServer dnsServer;
-AsyncWebServer webServer(80);
 
 // Configurable maximum relay duration in ms
 // Removed: const uint32_t MAX_RELAY_DURATION = 250;
 
 // Updated non-blocking relay control implementation
 
+bool poofersEnabled = true; // Global flag; true by default
+
 // Function to trigger a relay for a specified duration (in ms), clamped by MAX_RELAY_DURATION.
 void triggerRelay(int channel, int duration)
 {
+    // If the relay is in channels 0-5 (i.e. for poofers) and they are disabled, do nothing.
+    if (channel < 6 && !poofersEnabled)
+        return;
     if (channel < 0 || channel >= NUM_RELAYS)
         return;
     sr.set(channel, HIGH);
@@ -57,6 +61,8 @@ void triggerRelay(int channel, int duration)
 // New function to trigger a relay disregarding the MAX_RELAY_DURATION clamp.
 void triggerRelayLong(int channel, int duration)
 {
+    if (channel < 6 && !poofersEnabled)
+        return;
     if (channel < 0 || channel >= NUM_RELAYS)
         return;
     sr.set(channel, HIGH);
