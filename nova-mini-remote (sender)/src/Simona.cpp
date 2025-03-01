@@ -2,7 +2,7 @@
 #include "MIDIControl.hpp"
 #include "SimonaMessage.h"
 #include "configuration.h"
-#include <ESPUI.h>  // Added for ESPUI functions
+#include <ESPUI.h> // Added for ESPUI functions
 #include <Preferences.h>
 #include "PreferencesManager.h"
 
@@ -22,14 +22,16 @@ Definitions:
 
 */
 
-Simona* Simona::instance = nullptr;
+Simona *Simona::instance = nullptr;
 
 void Simona::initInstance(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors,
-                         LedControlCallback ledControl, ButtonReadCallback buttonRead) {
-    if (!instance) {
-        instance = new Simona(buttons, leds, buttonColors, ledColors, ledControl, buttonRead);
-        instance->loadPreferences();
-    }
+                          LedControlCallback ledControl, ButtonReadCallback buttonRead)
+{
+  if (!instance)
+  {
+    instance = new Simona(buttons, leds, buttonColors, ledColors, ledControl, buttonRead);
+    instance->loadPreferences();
+  }
 }
 
 Simona::Simona(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors, LedControlCallback ledControl, ButtonReadCallback buttonRead)
@@ -41,10 +43,11 @@ Simona::Simona(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const
   }
 }
 
-// Remove the resetGame() function entirely.
-// void Simona::resetGame() {
-//     // ...existing code...
-// }
+// Ensure that arrays like led_simonSaid and bt_simonSaid are declared with enough size. For example:
+// (Assuming MAX_LEVEL is defined)
+#define MAX_LEVEL 100
+uint8_t led_simonSaid[MAX_LEVEL + 1]; // Index 0 unused if looping from 1
+uint8_t bt_simonSaid[MAX_LEVEL + 1];
 
 void Simona::controlLed(uint8_t led, bool state)
 {
@@ -71,26 +74,28 @@ bool Simona::readButton(uint8_t button)
 }
 
 // NEW: Helper method to update and send the simulation message.
-void Simona::updateAndSendSimMsg(SimonaMessage &simMsg) {
-    simMsg.stage = stage;
-    simMsg.level = level;
-    simMsg.gamePlay = game_play;
-    simMsg.lost = lost;
-    simMsg.currentRound = m_currentRound;
-    simMsg.maxRounds = MAX_ROUNDS;
-    simMsg.levelsInRound = m_levelsInRound;
-    sendSimonaMessage(simMsg);
+void Simona::updateAndSendSimMsg(SimonaMessage &simMsg)
+{
+  simMsg.stage = stage;
+  simMsg.level = level;
+  simMsg.gamePlay = game_play;
+  simMsg.lost = lost;
+  simMsg.currentRound = m_currentRound;
+  simMsg.maxRounds = MAX_ROUNDS;
+  simMsg.levelsInRound = m_levelsInRound;
+  sendSimonaMessage(simMsg);
 }
 
-void Simona::loadPreferences() {
-    m_cheatMode = PreferencesManager::getBool(PreferencesManager::KEY_CHEAT_MODE);
+void Simona::loadPreferences()
+{
+  m_cheatMode = PreferencesManager::getBool(PreferencesManager::KEY_CHEAT_MODE);
 }
 
 void Simona::runGameTask()
 {
   // Remove this line - we're using the class member instead
   // static uint32_t inputStart = 0;
-  
+
   static SimonaMessage simMsg = {};
 
   while (true)
@@ -124,12 +129,15 @@ void Simona::runGameTask()
       {
         // Update cheat mode from global setting
         m_cheatMode = SIMONA_CHEAT_MODE;
-        
-        if (m_cheatMode) {
+
+        if (m_cheatMode)
+        {
           // In cheat mode, sequence is always RED->GREEN->YELLOW->BLUE
-          const uint8_t cheatSequence[] = {0, 1, 3, 2};  // RED=0, GREEN=1, YELLOW=3, BLUE=2
+          const uint8_t cheatSequence[] = {0, 1, 3, 2}; // RED=0, GREEN=1, YELLOW=3, BLUE=2
           led_simonSaid[level] = cheatSequence[(level - 1) % 4];
-        } else {
+        }
+        else
+        {
           uint8_t maxSameAllowed = 2;
           if (level == 1)
           {
@@ -171,11 +179,11 @@ void Simona::runGameTask()
         controlLed(leds[led_simonSaid[i]], true);
         // Update litButton for current LED during sequence display.
 
-        //simMsg.litButton = leds[led_simonSaid[i]];
-        //Serial.print(ledColors[led_simonSaid[i]]);
+        // simMsg.litButton = leds[led_simonSaid[i]];
+        // Serial.print(ledColors[led_simonSaid[i]]);
 
         simMsg.litButton = led_simonSaid[i];
-        //Serial.print(ledColors[led_simonSaid[i]]);
+        // Serial.print(ledColors[led_simonSaid[i]]);
         Serial.print(" ");
 
         updateAndSendSimMsg(simMsg);
@@ -201,7 +209,8 @@ void Simona::runGameTask()
     case SIMONA_STAGE_INPUT_COLLECTION: // 3
     {
       // Remove any local declarations of inputStart
-      if (inputStart == 0) {
+      if (inputStart == 0)
+      {
         inputStart = millis();
         Serial.println("Timer reset: Input collection start");
       }
@@ -212,7 +221,8 @@ void Simona::runGameTask()
 #if SIMONA_DEBUG_TIMEOUT
       // Only print every 1000ms to avoid console spam
       static uint32_t lastDebugPrint = 0;
-      if (millis() - lastDebugPrint >= 1000) {
+      if (millis() - lastDebugPrint >= 1000)
+      {
         Serial.print("Time remaining: ");
         Serial.print(remaining / 1000);
         Serial.println(" seconds");
@@ -220,7 +230,8 @@ void Simona::runGameTask()
       }
 #endif
 
-      if (elapsed > SIMONA_INPUT_TIMEOUT_SECONDS * 1000UL) { // Use configuration timeout in seconds.
+      if (elapsed > SIMONA_INPUT_TIMEOUT_SECONDS * 1000UL)
+      { // Use configuration timeout in seconds.
         Serial.print("Input timeout after ");
         Serial.print(elapsed / 1000);
         Serial.println(" seconds");
@@ -229,9 +240,10 @@ void Simona::runGameTask()
         inputStart = 0;
         break;
       }
-      
+
       // Only process button inputs if game is enabled
-      if (GAME_ENABLED) {
+      if (GAME_ENABLED)
+      {
         // Collect player's input and update lastPressedButton on button press.
         for (uint8_t i = 0; i <= 3; i++)
         {
@@ -239,7 +251,8 @@ void Simona::runGameTask()
           if (button[i])
           {
             // Only reset timer if the input was correct
-            if (bt_simonSaid[game_play] == led_simonSaid[game_play]) {
+            if (bt_simonSaid[game_play] == led_simonSaid[game_play])
+            {
               inputStart = millis();
               Serial.println("Timer reset: Valid input");
             }
@@ -260,7 +273,7 @@ void Simona::runGameTask()
               Serial.println("Incorrect button! Ending game play.");
               lost = 1;
               stage = SIMONA_STAGE_GAME_LOST;
-              //updateAndSendSimMsg(simMsg);
+              // updateAndSendSimMsg(simMsg);
 
               while (readButton(buttons[i]))
               {
@@ -282,17 +295,19 @@ void Simona::runGameTask()
             {
               game_play = 1;
               stage = SIMONA_STAGE_VERIFICATION;
-              //updateAndSendSimMsg(simMsg);
+              // updateAndSendSimMsg(simMsg);
               break;
             }
           }
         }
-      } else {
+      }
+      else
+      {
         // Game input disabled, but still send updates
         simMsg.lastPressedButton = -1; // No button pressed
         updateAndSendSimMsg(simMsg);
       }
-      
+
       vTaskDelay(10 / portTICK_PERIOD_MS);
       break;
     }
@@ -312,7 +327,8 @@ void Simona::runGameTask()
 
       delay(400);
 
-      if (!lost) {
+      if (!lost)
+      {
         inputStart = millis();
         Serial.println("Timer reset: Sequence verified");
       }
@@ -359,7 +375,7 @@ void Simona::runGameTask()
           controlLed(LED_GREEN, false);
           controlLed(LED_BLUE, false);
           controlLed(LED_YELLOW, false);
-          
+
           // Reset everything for a new game
           level = 1;
           m_currentRound = 1;
@@ -369,7 +385,7 @@ void Simona::runGameTask()
         else
         {
           Serial.println("Round complete - transitioning to next round");
-          level = 1;  // Explicitly reset level here
+          level = 1; // Explicitly reset level here
           stage = SIMONA_STAGE_ROUND_TRANSITION;
         }
       }
@@ -397,7 +413,7 @@ void Simona::runGameTask()
       level = 1;
       game_play = 1;
       lost = 0;
-      m_currentRound = 1;      // Reset round count
+      m_currentRound = 1;                         // Reset round count
       m_levelsInRound = LEVELS_PER_ROUND_DEFAULT; // Reset levels per round using the constant.
       stage = SIMONA_STAGE_SEQUENCE_GENERATION;
       break;
@@ -407,24 +423,26 @@ void Simona::runGameTask()
       Serial.println("   -- SIMONA_STAGE_ROUND_TRANSITION --   ");
       Serial.println("Round Complete! Starting next round with more levels!");
       updateAndSendSimMsg(simMsg);
-      
+
       // Play round transition music before visual feedback
       playRoundTransitionMusic(m_currentRound);
-      
+
       // Flash LEDs in sequence 20 times
       const uint8_t allLeds[] = {LED_RED, LED_GREEN, LED_BLUE, LED_YELLOW};
-      for (int j = 0; j < 6; j++) {
-        for (int i = 0; i < 4; i++) {
+      for (int j = 0; j < 6; j++)
+      {
+        for (int i = 0; i < 4; i++)
+        {
           controlLed(allLeds[i], true);
           delay(50);
           controlLed(allLeds[i], false);
         }
       }
-      
+
       // Increment round and increase levels per round
       m_currentRound++;
       m_levelsInRound++; // Increase levels instead of resetting to DEFAULT_LEVELS_PER_ROUND.
-      level = 1;  // Ensure level is reset to 1
+      level = 1;         // Ensure level is reset to 1
       Serial.print("New round started. Round: ");
       Serial.print(m_currentRound);
       Serial.print(", Levels in round: ");
