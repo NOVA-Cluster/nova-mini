@@ -142,11 +142,13 @@ void switchCallback(Control *sender, int value)
     {
         if (sender->value == "1")
         {
-            Control* sliderCtrl = ESPUI.getControl(dumpDurationSlider);
+            Control *sliderCtrl = ESPUI.getControl(dumpDurationSlider);
             String durationStr = sliderCtrl ? sliderCtrl->value : "1";
             int durationMinutes = durationStr.toInt();
-            if (durationMinutes < 1) durationMinutes = 1;
-            if (durationMinutes > 120) durationMinutes = 120;  // Allow max 120 minutes
+            if (durationMinutes < 1)
+                durationMinutes = 1;
+            if (durationMinutes > 120)
+                durationMinutes = 120;                    // Allow max 120 minutes
             int durationMs = durationMinutes * 60 * 1000; // convert minutes to milliseconds
 
             // Record dump start time and duration, and mark dump active.
@@ -290,12 +292,12 @@ void webSetup()
     // controlMillis = ESPUI.addControl(ControlType::Label, "Uptime", "0", ControlColor::Emerald, mainTab);
 
     // Instead, add a new text field describing gameplay:
-    uint16_t gameDescriptionField = ESPUI.addControl(ControlType::Label, 
-        "Mini Nova Gameplay", 
-        "Mini Nova is a memory game where LED sequences are displayed. "
-        "Repeat the sequence by pressing the corresponding buttons. "
-        "Press the designated start button to begin.", 
-        ControlColor::None, mainTab);
+    uint16_t gameDescriptionField = ESPUI.addControl(ControlType::Label,
+                                                     "Mini Nova Gameplay",
+                                                     "Mini Nova is a memory game where LED sequences are displayed. "
+                                                     "Repeat the sequence by pressing the corresponding buttons. "
+                                                     "Press the designated start button to begin.",
+                                                     ControlColor::None, mainTab);
 
     //----- (Manual) -----
     pooferA1 = ESPUI.addControl(ControlType::Button, "Poofers", "Poof 1", ControlColor::Alizarin, manualTab, buttonCallback);
@@ -305,8 +307,8 @@ void webSetup()
 
     // Dump tab controls
     dumpDurationSlider = ESPUI.addControl(ControlType::Slider, "Dump Duration (min)", "1", ControlColor::None, dumpTab, &slider);
-	ESPUI.addControl(Min, "", "1", None, dumpDurationSlider);
-	ESPUI.addControl(Max, "", "120", None, dumpDurationSlider);
+    ESPUI.addControl(Min, "", "1", None, dumpDurationSlider);
+    ESPUI.addControl(Max, "", "120", None, dumpDurationSlider);
     dumpSwitch = ESPUI.addControl(ControlType::Switcher, "Dump", "0", ControlColor::Alizarin, dumpTab, &switchCallback);
     // Add new label to show remaining dump time:
     dumpTimeRemainingLabel = ESPUI.addControl(ControlType::Label, "Dump Time Remaining", "0 s", ControlColor::Wetasphalt, dumpTab);
@@ -372,7 +374,16 @@ void webSetup()
     // Add new Settings tab
     settingsTab = ESPUI.addControl(ControlType::Tab, "Settings", "Settings");
 
-    // Add Factory Reset instructions label
+    // New: Move Enable Poofers toggle to the top of the Settings tab.
+    poofersEnabledSwitch = ESPUI.addControl(
+        ControlType::Switcher,
+        "Enable Poofers",
+        "1", // Default enabled
+        ControlColor::Emerald,
+        settingsTab,
+        &switchCallback);
+
+    // Then add rest of Settings controls:
     ESPUI.addControl(
         ControlType::Label,
         "Factory Reset",
@@ -381,7 +392,6 @@ void webSetup()
         ControlColor::Alizarin,
         settingsTab);
 
-    // Add Factory Reset text field with the new callback
     factoryResetText = ESPUI.addControl(
         ControlType::Text,
         "Reset Device",
@@ -389,15 +399,6 @@ void webSetup()
         ControlColor::Alizarin,
         settingsTab,
         &factoryResetTextCallback);
-
-    // Add Enable Poofers toggle below other settings controls:
-    poofersEnabledSwitch = ESPUI.addControl(
-        ControlType::Switcher,
-        "Enable Poofers",
-        "1", // Default enabled
-        ControlColor::Emerald,
-        settingsTab,
-        &switchCallback);
 
     ESPUI.captivePortal = true;
     ESPUI.list();
@@ -452,9 +453,9 @@ void webLoop()
             // Append poofers status based on global flag.
             extern bool poofersEnabled;
             if (poofersEnabled)
-                statusMsg += "Poofers: 🐹";
+                statusMsg += "Poofers: Enabled 🐹";
             else
-                statusMsg += "Poofers: 💩";
+                statusMsg += "Poofers: Chocolate Soft Serve Ice Cream 💩";
 
             ESPUI.updateControlValue(status, statusMsg);
             ESPUI.updateControl(statusControl);
