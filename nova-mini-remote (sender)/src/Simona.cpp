@@ -173,7 +173,7 @@ void Simona::runGameTask()
       }
       Serial.println();
 
-      delay(200);
+      vTaskDelay(200 / portTICK_PERIOD_MS);  // Replaced delay(200)
       Serial.print("Sequence: ");
       for (uint8_t i = 1; i <= level; i++)
       {
@@ -190,7 +190,7 @@ void Simona::runGameTask()
         updateAndSendSimMsg(simMsg);
 
         playBuzzer(60 + (led_simonSaid[i] - 7));
-        delay(50);
+        vTaskDelay(50 / portTICK_PERIOD_MS);  // Replaced delay(50)
         controlLed(leds[led_simonSaid[i]], false);
       }
       Serial.println();
@@ -287,7 +287,7 @@ void Simona::runGameTask()
             {
               vTaskDelay(10 / portTICK_PERIOD_MS);
             }
-            delay(10);
+            vTaskDelay(10 / portTICK_PERIOD_MS);  // Replaced delay(10)
             controlLed(leds[i], false);
             Serial.print("LED OFF: ");
             Serial.println(ledColors[i]);
@@ -326,7 +326,7 @@ void Simona::runGameTask()
       }
       updateAndSendSimMsg(simMsg);
 
-      delay(400);
+      vTaskDelay(400 / portTICK_PERIOD_MS);  // Replaced delay(400)
 
       if (!lost)
       {
@@ -409,7 +409,7 @@ void Simona::runGameTask()
 
       playGameIntro();
       controlLed(LED_RESET, true);
-      delay(500);
+      vTaskDelay(500 / portTICK_PERIOD_MS);  // Replaced delay(500)
       controlLed(LED_RESET, false);
       level = 1;
       game_play = 1;
@@ -435,7 +435,7 @@ void Simona::runGameTask()
         for (int i = 0; i < 4; i++)
         {
           controlLed(allLeds[i], true);
-          delay(50);
+          vTaskDelay(50 / portTICK_PERIOD_MS);  // Replaced delay(50)
           controlLed(allLeds[i], false);
         }
       }
