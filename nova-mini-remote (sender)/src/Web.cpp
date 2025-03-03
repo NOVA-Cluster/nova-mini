@@ -40,6 +40,9 @@ String receiverMacAddress = "";
 // Add packet loss label control ID
 uint16_t packetLossLabel;
 
+// Add new control ID for sequence local echo
+uint16_t sequenceLocalEchoSwitch;
+
 void handleRequest(AsyncWebServerRequest *request)
 {
     AsyncResponseStream *response = request->beginResponseStream("text/html");
@@ -149,6 +152,13 @@ void switchCallback(Control *sender, int value)
         GAME_ENABLED = (sender->value == "1");
         PreferencesManager::setBool(PreferencesManager::KEY_GAME_ENABLED, GAME_ENABLED);
         Serial.printf("Game %s and saved to preferences\n", GAME_ENABLED ? "enabled" : "disabled");
+    }
+    else if (sender->id == sequenceLocalEchoSwitch)
+    {
+        bool enabled = (sender->value == "1");
+        PreferencesManager::setBool(PreferencesManager::KEY_SEQUENCE_LOCAL_ECHO, enabled);
+        Simona::getInstance()->setSequenceLocalEcho(enabled);
+        Serial.printf("Sequence local echo %s and saved to preferences\n", enabled ? "enabled" : "disabled");
     }
 }
 
@@ -409,6 +419,20 @@ void webSetup()
                                          ControlColor::Peterriver,
                                          settingsTab,
                                          &switchCallback);
+
+    // Add sequence local echo toggle below game enabled
+    bool sequenceLocalEcho = PreferencesManager::getBool(PreferencesManager::KEY_SEQUENCE_LOCAL_ECHO, true);
+    sequenceLocalEchoSwitch = ESPUI.addControl(ControlType::Switcher, "Sequence Local Echo",
+                                               sequenceLocalEcho ? "1" : "0",
+                                               ControlColor::Peterriver,
+                                               settingsTab,
+                                               &switchCallback);
+    
+    // Add tooltip explaining sequence local echo
+    ESPUI.addControl(ControlType::Label, "",
+                     "When disabled, LED sequences will only play on NOVA, not on the remote",
+                     ControlColor::None,
+                     sequenceLocalEchoSwitch);
 
     // Remove the separator line - it was ugly
 

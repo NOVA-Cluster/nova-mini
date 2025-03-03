@@ -1,12 +1,12 @@
 #include "Simona.h"
-#include "midi/MIDIControl.hpp"  // Updated path to MIDI module
+#include "midi/MIDIControl.hpp" // Updated path to MIDI module
 #include "SimonaMessage.h"
 #include "configuration.h"
 #include <ESPUI.h> // Added for ESPUI functions
 #include <Preferences.h>
-#include "utilities/PreferencesManager.h"  // Updated path
+#include "utilities/PreferencesManager.h" // Updated path
 #include "EspNow.h"
-#include "main.h"  // Added for setLedBrightness
+#include "main.h" // Added for setLedBrightness
 
 /*
   Based on:
@@ -91,6 +91,7 @@ void Simona::updateAndSendSimMsg(SimonaMessage &simMsg)
 void Simona::loadPreferences()
 {
   m_cheatMode = PreferencesManager::getBool(PreferencesManager::KEY_CHEAT_MODE);
+  m_sequenceLocalEcho = PreferencesManager::getBool(PreferencesManager::KEY_SEQUENCE_LOCAL_ECHO, true); // Default to true
 }
 
 void Simona::runGameTask()
@@ -174,25 +175,29 @@ void Simona::runGameTask()
       }
       Serial.println();
 
-      vTaskDelay(200 / portTICK_PERIOD_MS);  // Replaced delay(200)
+      vTaskDelay(200 / portTICK_PERIOD_MS); // Replaced delay(200)
       Serial.print("Sequence: ");
       for (uint8_t i = 1; i <= level; i++)
       {
-        controlLed(leds[led_simonSaid[i]], true);
-        // Update litButton for current LED during sequence display.
-
-        // simMsg.litButton = leds[led_simonSaid[i]];
-        // Serial.print(ledColors[led_simonSaid[i]]);
+        // Only control LEDs if sequence local echo is enabled
+        if (m_sequenceLocalEcho)
+        {
+          controlLed(leds[led_simonSaid[i]], true);
+        }
 
         simMsg.litButton = led_simonSaid[i];
-        // Serial.print(ledColors[led_simonSaid[i]]);
         Serial.print(" ");
 
         updateAndSendSimMsg(simMsg);
 
         playBuzzer(60 + (led_simonSaid[i] - 7));
-        vTaskDelay(50 / portTICK_PERIOD_MS);  // Replaced delay(50)
-        controlLed(leds[led_simonSaid[i]], false);
+        vTaskDelay(50 / portTICK_PERIOD_MS); // Replaced delay(50)
+
+        // Only control LEDs if sequence local echo is enabled
+        if (m_sequenceLocalEcho)
+        {
+          controlLed(leds[led_simonSaid[i]], false);
+        }
       }
       Serial.println();
       inputStart = millis(); // Reset timer at start of new sequence
@@ -288,7 +293,7 @@ void Simona::runGameTask()
             {
               vTaskDelay(10 / portTICK_PERIOD_MS);
             }
-            vTaskDelay(10 / portTICK_PERIOD_MS);  // Replaced delay(10)
+            vTaskDelay(10 / portTICK_PERIOD_MS); // Replaced delay(10)
             controlLed(leds[i], false);
             Serial.print("LED OFF: ");
             Serial.println(ledColors[i]);
@@ -327,7 +332,7 @@ void Simona::runGameTask()
       }
       updateAndSendSimMsg(simMsg);
 
-      vTaskDelay(400 / portTICK_PERIOD_MS);  // Replaced delay(400)
+      vTaskDelay(400 / portTICK_PERIOD_MS); // Replaced delay(400)
 
       if (!lost)
       {
@@ -409,9 +414,9 @@ void Simona::runGameTask()
       updateAndSendSimMsg(simMsg);
 
       playGameIntro();
-      //controlLed(LED_RESET, true);
-      //vTaskDelay(500 / portTICK_PERIOD_MS);  // Replaced delay(500)
-      //controlLed(LED_RESET, false);
+      // controlLed(LED_RESET, true);
+      // vTaskDelay(500 / portTICK_PERIOD_MS);  // Replaced delay(500)
+      // controlLed(LED_RESET, false);
       level = 1;
       game_play = 1;
       lost = 0;
@@ -436,7 +441,7 @@ void Simona::runGameTask()
         for (int i = 0; i < 4; i++)
         {
           controlLed(allLeds[i], true);
-          vTaskDelay(50 / portTICK_PERIOD_MS);  // Replaced delay(50)
+          vTaskDelay(50 / portTICK_PERIOD_MS); // Replaced delay(50)
           controlLed(allLeds[i], false);
         }
       }
@@ -472,11 +477,11 @@ void Simona::runButtonTask()
     // Only process button presses if game is enabled
     if (GAME_ENABLED && readButton(BTN_RESET))
     {
-      stage = SIMONA_STAGE_RESET;  // Set the new reset stage.
+      stage = SIMONA_STAGE_RESET; // Set the new reset stage.
       while (readButton(BTN_RESET))
       {
-      controlLed(LED_RESET, true); // Turn on the reset LED.
-      vTaskDelay(10 / portTICK_PERIOD_MS); // wait for button release.
+        controlLed(LED_RESET, true);         // Turn on the reset LED.
+        vTaskDelay(10 / portTICK_PERIOD_MS); // wait for button release.
       }
       controlLed(LED_RESET, false); // Turn on the reset LED.
       // Removed direct LED off call since reset logic handles it.

@@ -162,6 +162,18 @@ public:
      */
     bool getCheatMode() const { return m_cheatMode; }
 
+    /**
+     * @brief Enable or disable sequence local echo
+     * @param enabled True to enable sequence local echo, false to disable
+     */
+    void setSequenceLocalEcho(bool enabled) { m_sequenceLocalEcho = enabled; }
+
+    /**
+     * @brief Check if sequence local echo is enabled
+     * @return True if sequence local echo is enabled
+     */
+    bool getSequenceLocalEcho() const { return m_sequenceLocalEcho; }
+
 private:
     static Simona *instance; // Singleton instance
 
@@ -193,6 +205,7 @@ private:
 
     // Game settings
     bool m_cheatMode = false; // Flag for cheat mode (predictable sequence)
+    bool m_sequenceLocalEcho; // Flag for sequence local echo
     uint32_t inputStart = 0;  // Timestamp when input collection started (for timeout)
 
     /**
