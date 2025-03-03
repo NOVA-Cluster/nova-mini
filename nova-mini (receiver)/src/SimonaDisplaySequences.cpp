@@ -189,7 +189,8 @@ void displaySimonaStageSequenceGenerationAnimation()
     if (ledIndex >= 0 && ledIndex < NUM_LEDS_FOR_TEST)
     {
         leds[ledIndex] = targetColor;
-        triggerRelay(ledIndex, 25);
+        // Modified relay mapping: led 0 -> relay 3, led 1 -> relay 2, etc.
+        triggerRelay(NUM_LEDS_FOR_TEST - 1 - ledIndex, 25);
     }
     FastLED.show();
     vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -235,7 +236,8 @@ void displaySimonaStageInputCollectionAnimation()
     if (ledIndex >= 0 && ledIndex < NUM_LEDS_FOR_TEST)
     {
         leds[ledIndex] = targetColor;
-        triggerRelay(ledIndex, 25);
+        // Modified relay mapping: led 0 -> relay 3, led 1 -> relay 2, etc.
+        triggerRelay(NUM_LEDS_FOR_TEST - 1 - ledIndex, 25);
     }
     FastLED.show();
     vTaskDelay(50 / portTICK_PERIOD_MS);
