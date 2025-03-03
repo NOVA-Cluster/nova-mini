@@ -18,7 +18,7 @@
 #define LEDC_FREQ_HZ      5000
 #define LEDC_RESOLUTION   8       // 8-bit resolution (0-255)
 #define LEDC_FULL_DUTY    255     // Full brightness duty cycle
-#define LEDC_DIM_DUTY     5      // 10% brightness duty cycle (255 * 0.10)
+#define LEDC_DIM_DUTY     3      // 10% brightness duty cycle (255 * 0.10)
 
 #define LEDC_CHANNEL_RED      0
 #define LEDC_CHANNEL_GREEN    1
