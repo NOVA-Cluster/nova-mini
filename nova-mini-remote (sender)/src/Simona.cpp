@@ -6,6 +6,7 @@
 #include <Preferences.h>
 #include "utilities/PreferencesManager.h"  // Updated path
 #include "EspNow.h"
+#include "main.h"  // Added for setLedBrightness
 
 /*
   Based on:
@@ -54,11 +55,11 @@ void Simona::controlLed(uint8_t led, bool state)
 {
   if (ledControl)
   {
-    ledControl(led, !state); // Invert the state
+    ledControl(led, !state); // Keep the inversion logic
   }
   else
   {
-    digitalWrite(led, !state); // Invert the state for direct control
+    setLedBrightness(led, !state); // Using the new PWM function, keep inversion logic
   }
 }
 

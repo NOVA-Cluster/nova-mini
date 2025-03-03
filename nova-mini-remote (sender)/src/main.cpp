@@ -64,6 +64,13 @@ void checkWiFiStatus(void *parameter)
   }
 }
 
+// Function to initialize LED with PWM
+void initLedPWM(uint8_t pin, uint8_t channel) {
+  ledcSetup(channel, LEDC_FREQ_HZ, LEDC_RESOLUTION);
+  ledcAttachPin(pin, channel);
+  ledcWrite(channel, LEDC_FULL_DUTY); // Initialize to full brightness (on state)
+}
+
 void setup()
 {
   Serial.begin(115200); // Initialize serial communication for debugging
@@ -80,35 +87,19 @@ void setup()
 
   NovaLogo(); // Print the Nova logo
 
-  // Initialize digital pins as outputs for LEDs in the buttons
-  for (uint8_t i = 0; i <= 3; i++)
-  {
-    pinMode(buttons[i], INPUT_PULLUP); // Set the button pins as inputs
-    pinMode(leds[i], OUTPUT);          // Set the LED pins as outputs
-  }
-
-  pinMode(LED_RESET, OUTPUT);
-  pinMode(BTN_RESET, INPUT_PULLUP);
-
-  // Set LED pins as outputs and initialize to ON
-  pinMode(LED_RED, OUTPUT);
-  pinMode(LED_GREEN, OUTPUT);
-  pinMode(LED_BLUE, OUTPUT);
-  pinMode(LED_YELLOW, OUTPUT);
-  pinMode(LED_RESET, OUTPUT);
-
-  digitalWrite(LED_RED, HIGH);
-  digitalWrite(LED_GREEN, HIGH);
-  digitalWrite(LED_BLUE, HIGH);
-  digitalWrite(LED_YELLOW, HIGH);
-  digitalWrite(LED_RESET, HIGH);
-
-  // Set button pins as inputs
+  // Initialize button pins
   pinMode(BTN_RED, INPUT);
   pinMode(BTN_GREEN, INPUT);
   pinMode(BTN_BLUE, INPUT);
   pinMode(BTN_YELLOW, INPUT);
   pinMode(BTN_RESET, INPUT);
+
+  // Initialize LEDs with PWM
+  initLedPWM(LED_RED, LEDC_CHANNEL_RED);
+  initLedPWM(LED_GREEN, LEDC_CHANNEL_GREEN);
+  initLedPWM(LED_BLUE, LEDC_CHANNEL_BLUE);
+  initLedPWM(LED_YELLOW, LEDC_CHANNEL_YELLOW);
+  initLedPWM(LED_RESET, LEDC_CHANNEL_RESET);
 
   if (0)
   {
@@ -196,6 +187,20 @@ void loop()
   // dnsServer.processNextRequest();
   // Empty loop as tasks are handled by FreeRTOS
   espNowLoop(); // call the renamed loop function from EspNow.cpp
+}
+
+// LED control function that other code can call
+void setLedBrightness(uint8_t led, bool isOn) {
+  uint8_t channel;
+  switch(led) {
+    case LED_RED: channel = LEDC_CHANNEL_RED; break;
+    case LED_GREEN: channel = LEDC_CHANNEL_GREEN; break;
+    case LED_BLUE: channel = LEDC_CHANNEL_BLUE; break;
+    case LED_YELLOW: channel = LEDC_CHANNEL_YELLOW; break;
+    case LED_RESET: channel = LEDC_CHANNEL_RESET; break;
+    default: return;
+  }
+  ledcWrite(channel, isOn ? LEDC_FULL_DUTY : LEDC_DIM_DUTY);
 }
 
 // Remove gameTask and buttonTask function definitions
