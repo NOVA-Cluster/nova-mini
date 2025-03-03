@@ -409,9 +409,9 @@ void Simona::runGameTask()
       updateAndSendSimMsg(simMsg);
 
       playGameIntro();
-      controlLed(LED_RESET, true);
-      vTaskDelay(500 / portTICK_PERIOD_MS);  // Replaced delay(500)
-      controlLed(LED_RESET, false);
+      //controlLed(LED_RESET, true);
+      //vTaskDelay(500 / portTICK_PERIOD_MS);  // Replaced delay(500)
+      //controlLed(LED_RESET, false);
       level = 1;
       game_play = 1;
       lost = 0;
@@ -472,12 +472,13 @@ void Simona::runButtonTask()
     // Only process button presses if game is enabled
     if (GAME_ENABLED && readButton(BTN_RESET))
     {
-      controlLed(LED_RESET, true); // Turn on the reset LED.
       stage = SIMONA_STAGE_RESET;  // Set the new reset stage.
       while (readButton(BTN_RESET))
       {
-        vTaskDelay(10 / portTICK_PERIOD_MS); // wait for button release.
+      controlLed(LED_RESET, true); // Turn on the reset LED.
+      vTaskDelay(10 / portTICK_PERIOD_MS); // wait for button release.
       }
+      controlLed(LED_RESET, false); // Turn on the reset LED.
       // Removed direct LED off call since reset logic handles it.
     }
     // ...existing code...
