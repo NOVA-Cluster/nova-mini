@@ -7,8 +7,8 @@
 
 void initializeMIDI();
 void playGameIntro();
-void playTechnoBassline();
-void playTechnoMelody();
+//void playTechnoBassline();
+//void playTechnoMelody();
 void playBuzzer(int x);
 void playLost();
 void playWin();
