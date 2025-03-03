@@ -90,6 +90,26 @@ void setup()
   pinMode(LED_RESET, OUTPUT);
   pinMode(BTN_RESET, INPUT_PULLUP);
 
+  // Set LED pins as outputs and initialize to ON
+  pinMode(LED_RED, OUTPUT);
+  pinMode(LED_GREEN, OUTPUT);
+  pinMode(LED_BLUE, OUTPUT);
+  pinMode(LED_YELLOW, OUTPUT);
+  pinMode(LED_RESET, OUTPUT);
+
+  digitalWrite(LED_RED, HIGH);
+  digitalWrite(LED_GREEN, HIGH);
+  digitalWrite(LED_BLUE, HIGH);
+  digitalWrite(LED_YELLOW, HIGH);
+  digitalWrite(LED_RESET, HIGH);
+
+  // Set button pins as inputs
+  pinMode(BTN_RED, INPUT);
+  pinMode(BTN_GREEN, INPUT);
+  pinMode(BTN_BLUE, INPUT);
+  pinMode(BTN_YELLOW, INPUT);
+  pinMode(BTN_RESET, INPUT);
+
   if (0)
   {
     Serial.println("   Welcome To   ");

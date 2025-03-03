@@ -54,11 +54,11 @@ void Simona::controlLed(uint8_t led, bool state)
 {
   if (ledControl)
   {
-    ledControl(led, state);
+    ledControl(led, !state); // Invert the state
   }
   else
   {
-    digitalWrite(led, state ? HIGH : LOW);
+    digitalWrite(led, !state); // Invert the state for direct control
   }
 }
 
