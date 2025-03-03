@@ -189,7 +189,7 @@ void displaySimonaStageSequenceGenerationAnimation()
     if (ledIndex >= 0 && ledIndex < NUM_LEDS_FOR_TEST)
     {
         leds[ledIndex] = targetColor;
-        triggerRelay(ledIndex, 100);
+        triggerRelay(ledIndex, 25);
     }
     FastLED.show();
     vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -235,7 +235,7 @@ void displaySimonaStageInputCollectionAnimation()
     if (ledIndex >= 0 && ledIndex < NUM_LEDS_FOR_TEST)
     {
         leds[ledIndex] = targetColor;
-        triggerRelay(ledIndex, 100);
+        triggerRelay(ledIndex, 25);
     }
     FastLED.show();
     vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -320,7 +320,7 @@ void displaySimonaStageGameWinAnimation()
     for (int pulse = 0; pulse < pulses; pulse++)
     {
         // Trigger the current relay before starting the pulse
-        triggerRelay(currentRelay, 100);
+        triggerRelay(currentRelay, 25);
         currentRelay = (currentRelay + 1) % 4;
 
         for (int step = 0; step <= stepsPerPulse; step++)
@@ -476,7 +476,7 @@ void displaySimonaStageRoundTransitionAnimation()
     case 0: // Trigger relays in sequence
         if (currentLED < 4)
         {
-            triggerRelay(currentLED, 50);
+            triggerRelay(currentLED, 25);
             currentLED++;
             return;
         }
