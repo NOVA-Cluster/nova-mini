@@ -28,3 +28,7 @@
 #define REPORT_TASK_INTERVAL (120 * 1000) // How often to report task status in milliseconds
 
 #define LED_PIN_FASTLED 8  // Use GPIO8 for FastLED LEDs
+
+// Preferences configuration
+#define PREF_NAMESPACE "nova"
+#define PREF_KEY_REMOTE_MAC "remote_mac"

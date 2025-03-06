@@ -48,8 +48,8 @@ void updatePeerList(const uint8_t *mac)
     snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    // Save this MAC using PreferencesManager with key KEY_REMOTE_MAC
-    PreferencesManager::setString(PreferencesManager::KEY_REMOTE_MAC, macStr);
+    // Save this MAC using PreferencesManager with PREF_KEY_REMOTE_MAC
+    PreferencesManager::setString(PREF_KEY_REMOTE_MAC, macStr);
 
     if (connectedRemotes.indexOf(macStr) == -1)
     {
@@ -164,8 +164,8 @@ void initEspNowReceiver()
         return;
     }
 
-    // Load saved MAC address from PreferencesManager using KEY_REMOTE_MAC
-    String savedMac = PreferencesManager::getString(PreferencesManager::KEY_REMOTE_MAC, "");
+    // Load saved MAC address from PreferencesManager using PREF_KEY_REMOTE_MAC
+    String savedMac = PreferencesManager::getString(PREF_KEY_REMOTE_MAC, "");
 
     if (!savedMac.isEmpty())
     {

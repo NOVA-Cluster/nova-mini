@@ -38,4 +38,13 @@
 // Task reporting interval (matching receiver implementation)
 #define REPORT_TASK_INTERVAL (120 * 1000) // How often to report task status in milliseconds
 
+// Preferences configuration
+#define PREF_NAMESPACE "nova"
+#define PREF_KEY_CHEAT_MODE "cheat_mode"
+#define PREF_KEY_REMOTE_MAC "remote_mac"
+#define PREF_KEY_RECEIVER_MAC "receiver_mac"
+#define PREF_KEY_WIRELESS_ENABLED "wireless_en"
+#define PREF_KEY_GAME_ENABLED "game_en"
+#define PREF_KEY_SEQUENCE_LOCAL_ECHO "seq_echo"
+
 #endif // CONFIGURATION_H

@@ -6,7 +6,7 @@ bool PreferencesManager::isInit = false;
 
 void PreferencesManager::init() {
     if (!isInit) {
-        prefs.begin(NAMESPACE, false);
+        prefs.begin(PREF_NAMESPACE, false);
         isInit = true;
     }
 }

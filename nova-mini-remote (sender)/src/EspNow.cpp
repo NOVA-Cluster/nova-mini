@@ -4,6 +4,7 @@
 #include "configuration.h"
 #include <Preferences.h>  // Add this include
 #include "EspNow.h"       // Make sure we include our own header file
+#include "utilities/PreferencesManager.h" // Add this include
 
 static portMUX_TYPE espNowMux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -154,13 +155,8 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 // Registers the receive callback and adds a broadcast peer.
 void espNowSetup()
 {
-    // ...existing code...
-    
     // Load saved MAC address
-    Preferences preferences;
-    preferences.begin("nova", false);
-    String savedMac = preferences.getString("receiver_mac", "");
-    preferences.end();
+    String savedMac = PreferencesManager::getString(PREF_KEY_RECEIVER_MAC, "");
 
     // Update target address if we have a saved MAC
     if (savedMac.length() > 0) {
@@ -191,8 +187,6 @@ void espNowSetup()
         Serial.println("Failed to add peer");
         return;
     }
-    
-    // ...existing code...
 }
 
 // Returns a string representing the name of a SimonaStage enum value.

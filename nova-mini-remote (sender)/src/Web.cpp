@@ -137,26 +137,26 @@ void switchCallback(Control *sender, int value)
     if (sender->id == cheatModeSwitch)
     {
         SIMONA_CHEAT_MODE = (sender->value == "1");
-        PreferencesManager::setBool(PreferencesManager::KEY_CHEAT_MODE, SIMONA_CHEAT_MODE);
+        PreferencesManager::setBool(PREF_KEY_CHEAT_MODE, SIMONA_CHEAT_MODE);
         Simona::getInstance()->setCheatMode(SIMONA_CHEAT_MODE); // Use singleton directly
         Serial.printf("Cheat mode %s and saved to preferences\n", SIMONA_CHEAT_MODE ? "enabled" : "disabled");
     }
     else if (sender->id == wirelessEnabledSwitch)
     {
         WIRELESS_ENABLED = (sender->value == "1");
-        PreferencesManager::setBool(PreferencesManager::KEY_WIRELESS_ENABLED, WIRELESS_ENABLED);
+        PreferencesManager::setBool(PREF_KEY_WIRELESS_ENABLED, WIRELESS_ENABLED);
         Serial.printf("Wireless %s and saved to preferences\n", WIRELESS_ENABLED ? "enabled" : "disabled");
     }
     else if (sender->id == gameEnabledSwitch)
     {
         GAME_ENABLED = (sender->value == "1");
-        PreferencesManager::setBool(PreferencesManager::KEY_GAME_ENABLED, GAME_ENABLED);
+        PreferencesManager::setBool(PREF_KEY_GAME_ENABLED, GAME_ENABLED);
         Serial.printf("Game %s and saved to preferences\n", GAME_ENABLED ? "enabled" : "disabled");
     }
     else if (sender->id == sequenceLocalEchoSwitch)
     {
         bool enabled = (sender->value == "1");
-        PreferencesManager::setBool(PreferencesManager::KEY_SEQUENCE_LOCAL_ECHO, enabled);
+        PreferencesManager::setBool(PREF_KEY_SEQUENCE_LOCAL_ECHO, enabled);
         Simona::getInstance()->setSequenceLocalEcho(enabled);
         Serial.printf("Sequence local echo %s and saved to preferences\n", enabled ? "enabled" : "disabled");
     }
@@ -252,7 +252,7 @@ void textCallback(Control *sender, int type)
             {
                 Serial.println("Saving MAC address (Enter pressed or focus lost)");
                 receiverMacAddress = newMac;
-                PreferencesManager::setString(PreferencesManager::KEY_RECEIVER_MAC, receiverMacAddress);
+                PreferencesManager::setString(PREF_KEY_RECEIVER_MAC, receiverMacAddress);
 
                 ESPUI.updateControlValue(status, "✓ MAC address saved: " + receiverMacAddress);
                 statusControl->color = ControlColor::Emerald;
@@ -321,10 +321,10 @@ void textCallback(Control *sender, int type)
 
             // Clear all preferences
             Serial.println("Clearing all preferences");
-            Preferences preferences;
-            preferences.begin("nova", false);
-            preferences.clear();
-            preferences.end();
+            Preferences p;
+            p.begin(PREF_NAMESPACE, false);
+            p.clear();
+            p.end();
 
             // Reboot
             Serial.println("Rebooting device");
@@ -349,15 +349,24 @@ void textCallback(Control *sender, int type)
     Serial.println("=== End Text Callback ===\n");
 }
 
+void tabCallback(Control* sender, int type) {
+    // Use sender->label instead of sender->id for string comparison
+    if (strcmp(sender->label, "Cheat Mode") == 0) {
+        SIMONA_CHEAT_MODE = !SIMONA_CHEAT_MODE;
+        PreferencesManager::setBool(PREF_KEY_CHEAT_MODE, SIMONA_CHEAT_MODE);
+        ESPUI.updateControlValue(sender, SIMONA_CHEAT_MODE ? "On" : "Off");
+    }
+}
+
 void webSetup()
 {
     Serial.println("In webSetup()");
 
     // Load saved preferences
-    SIMONA_CHEAT_MODE = PreferencesManager::getBool(PreferencesManager::KEY_CHEAT_MODE);
-    WIRELESS_ENABLED = PreferencesManager::getBool(PreferencesManager::KEY_WIRELESS_ENABLED, true); // Default to true
-    GAME_ENABLED = PreferencesManager::getBool(PreferencesManager::KEY_GAME_ENABLED, true);         // Default to true
-    receiverMacAddress = PreferencesManager::getString(PreferencesManager::KEY_RECEIVER_MAC);
+    SIMONA_CHEAT_MODE = PreferencesManager::getBool(PREF_KEY_CHEAT_MODE);
+    WIRELESS_ENABLED = PreferencesManager::getBool(PREF_KEY_WIRELESS_ENABLED, true); // Default to true
+    GAME_ENABLED = PreferencesManager::getBool(PREF_KEY_GAME_ENABLED, true);         // Default to true
+    receiverMacAddress = PreferencesManager::getString(PREF_KEY_RECEIVER_MAC);
 
     Serial.printf("Loaded cheat mode from preferences: %s\n", SIMONA_CHEAT_MODE ? "enabled" : "disabled");
     Serial.printf("Loaded wireless enabled from preferences: %s\n", WIRELESS_ENABLED ? "enabled" : "disabled");
@@ -421,7 +430,7 @@ void webSetup()
                                          &switchCallback);
 
     // Add sequence local echo toggle below game enabled
-    bool sequenceLocalEcho = PreferencesManager::getBool(PreferencesManager::KEY_SEQUENCE_LOCAL_ECHO, true);
+    bool sequenceLocalEcho = PreferencesManager::getBool(PREF_KEY_SEQUENCE_LOCAL_ECHO, true);
     sequenceLocalEchoSwitch = ESPUI.addControl(ControlType::Switcher, "Sequence Local Echo",
                                                sequenceLocalEcho ? "1" : "0",
                                                ControlColor::Peterriver,
@@ -460,7 +469,7 @@ void webSetup()
 
     //----- (ESPNow) -----
     // Load saved receiver MAC address
-    receiverMacAddress = PreferencesManager::getString(PreferencesManager::KEY_RECEIVER_MAC);
+    receiverMacAddress = PreferencesManager::getString(PREF_KEY_RECEIVER_MAC);
 
     // Modify the ESPNow tab section
     ESPUI.addControl(

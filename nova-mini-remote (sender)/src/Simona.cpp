@@ -90,8 +90,8 @@ void Simona::updateAndSendSimMsg(SimonaMessage &simMsg)
 
 void Simona::loadPreferences()
 {
-  m_cheatMode = PreferencesManager::getBool(PreferencesManager::KEY_CHEAT_MODE);
-  m_sequenceLocalEcho = PreferencesManager::getBool(PreferencesManager::KEY_SEQUENCE_LOCAL_ECHO, true); // Default to true
+  m_cheatMode = PreferencesManager::getBool(PREF_KEY_CHEAT_MODE);
+  m_sequenceLocalEcho = PreferencesManager::getBool(PREF_KEY_SEQUENCE_LOCAL_ECHO, true); // Default to true
 }
 
 void Simona::runGameTask()

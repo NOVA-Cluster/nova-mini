@@ -7,9 +7,9 @@
 #include "main.h"
 #include <ESPUI.h>
 #include <Arduino.h>
-#include <Preferences.h> // Add this include
-#include "configuration.h"
-#include "utilities/PreferencesManager.h" // Updated path
+#include <Preferences.h>
+#include "configuration.h"  // Make sure this is included first
+#include "utilities/PreferencesManager.h"
 
 // Add new control IDs
 uint16_t localMacLabel;
@@ -249,7 +249,7 @@ void textCallback(Control *sender, int type)
     }
 }
 
-// Add new callback for factory reset text field
+// Update the factoryResetTextCallback function
 void factoryResetTextCallback(Control *sender, int type)
 {
     // When Enter is pressed (type 10) and input equals "RESET"
@@ -264,11 +264,13 @@ void factoryResetTextCallback(Control *sender, int type)
             ESPUI.updateControl(statusControl);
         }
         delay(1000);
-        // Clear preferences using direct Preferences API
-        Preferences p;
-        p.begin(PreferencesManager::NAMESPACE, false);
-        p.clear();
-        p.end();
+
+        // Clear preferences the same way they are initialized elsewhere in the code
+        Preferences preferences;
+        preferences.begin("nova", false);
+        preferences.clear();
+        preferences.end();
+
         ESP.restart();
     }
 }

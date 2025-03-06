@@ -3,6 +3,7 @@
 
 #include <Preferences.h>
 #include <Arduino.h>
+#include "../configuration.h"
 
 class PreferencesManager {
 public:
@@ -19,10 +20,6 @@ public:
     static void setString(const char* key, const String& value);
     static void setInt(const char* key, int value);
 
-    // Only keep keys needed for the receiver
-    static constexpr const char* NAMESPACE = "nova";
-    static constexpr const char* KEY_REMOTE_MAC = "remote_mac";
-    
 private:
     static Preferences prefs;
     static bool isInit;
