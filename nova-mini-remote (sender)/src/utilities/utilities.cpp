@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include "freertos/semphr.h"
 #include <Arduino.h>
+#include "../configuration.h"
 
 // Add mutex for thread-safe serial printing
 static SemaphoreHandle_t serialMutex;
@@ -99,4 +100,17 @@ String getLastFourOfMac() {
     String lastPart = mac.substring(mac.length() - 5);
     lastPart.replace(":", "");
     return lastPart;
+}
+
+void setLedBrightness(uint8_t led, bool isOn) {
+    uint8_t channel;
+    switch(led) {
+        case LED_RED: channel = LEDC_CHANNEL_RED; break;
+        case LED_GREEN: channel = LEDC_CHANNEL_GREEN; break;
+        case LED_BLUE: channel = LEDC_CHANNEL_BLUE; break;
+        case LED_YELLOW: channel = LEDC_CHANNEL_YELLOW; break;
+        case LED_RESET: channel = LEDC_CHANNEL_RESET; break;
+        default: return;
+    }
+    ledcWrite(channel, isOn ? LEDC_FULL_DUTY : LEDC_DIM_DUTY);
 }

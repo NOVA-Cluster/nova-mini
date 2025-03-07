@@ -23,12 +23,6 @@ const char *ledColors[4] = {"RED", "GREEN", "BLUE", "YELLOW"};
 
 boolean button[4] = {0, 0, 0, 0};
 
-// Remove these lines
-// Simona simonaGame(buttons, leds, buttonColors, ledColors);
-// Simona* simona = &simonaGame;  // Point to our game instance instead of creating a new one
-
-// Remove gameTask and buttonTask declarations
-
 void WiFiEventHandler(WiFiEvent_t event)
 {
   switch (event)
@@ -187,20 +181,6 @@ void loop()
   // dnsServer.processNextRequest();
   // Empty loop as tasks are handled by FreeRTOS
   espNowLoop(); // call the renamed loop function from EspNow.cpp
-}
-
-// LED control function that other code can call
-void setLedBrightness(uint8_t led, bool isOn) {
-  uint8_t channel;
-  switch(led) {
-    case LED_RED: channel = LEDC_CHANNEL_RED; break;
-    case LED_GREEN: channel = LEDC_CHANNEL_GREEN; break;
-    case LED_BLUE: channel = LEDC_CHANNEL_BLUE; break;
-    case LED_YELLOW: channel = LEDC_CHANNEL_YELLOW; break;
-    case LED_RESET: channel = LEDC_CHANNEL_RESET; break;
-    default: return;
-  }
-  ledcWrite(channel, isOn ? LEDC_FULL_DUTY : LEDC_DIM_DUTY);
 }
 
 // Remove gameTask and buttonTask function definitions
