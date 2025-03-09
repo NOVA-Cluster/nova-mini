@@ -26,18 +26,17 @@ Definitions:
 
 Simona *Simona::instance = nullptr;
 
-void Simona::initInstance(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors,
-                          LedControlCallback ledControl, ButtonReadCallback buttonRead)
+void Simona::initInstance(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors)
 {
   if (!instance)
   {
-    instance = new Simona(buttons, leds, buttonColors, ledColors, ledControl, buttonRead);
+    instance = new Simona(buttons, leds, buttonColors, ledColors);
     instance->loadPreferences();
   }
 }
 
-Simona::Simona(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors, LedControlCallback ledControl, ButtonReadCallback buttonRead)
-    : buttons(buttons), leds(leds), buttonColors(buttonColors), ledColors(ledColors), lost(false), game_play(1), level(1), stage(SIMONA_STAGE_WAITING), ledControl(ledControl), buttonRead(buttonRead)
+Simona::Simona(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors)
+    : buttons(buttons), leds(leds), buttonColors(buttonColors), ledColors(ledColors), lost(false), game_play(1), level(1), stage(SIMONA_STAGE_WAITING)
 {
   for (uint8_t i = 0; i < 4; i++)
   {
@@ -53,29 +52,24 @@ uint8_t bt_simonSaid[MAX_LEVEL + 1];
 
 void Simona::controlLed(uint8_t led, bool state)
 {
-  if (ledControl)
-  {
-    ledControl(led, !state); // Keep the inversion logic
-  }
-  else
-  {
-    setLedBrightness(led, !state); // Using the new PWM function, keep inversion logic
-  }
+  setLedBrightness(led, !state); // Using PWM function, keep inversion logic
 }
 
 bool Simona::readButton(uint8_t button)
 {
-  if (buttonRead)
-  {
-    return buttonRead(button);
-  }
-  else
-  {
-    return digitalRead(button) == LOW;
-  }
+  return digitalRead(button) == LOW;
 }
 
-// NEW: Helper method to update and send the simulation message.
+/**
+ * @brief Updates the provided SimonaMessage object with the current state of the Simona instance
+ *        and prepares it for sending.
+ *
+ * This function updates the fields of the given SimonaMessage object with the current values
+ * of the Simona instance's stage, level, game play status, lost status, current round, maximum
+ * rounds, and levels in the current round. The updated message is then ready to be sent.
+ *
+ * @param simMsg A reference to the SimonaMessage object that will be updated with the current state.
+ */
 void Simona::updateAndSendSimMsg(SimonaMessage &simMsg)
 {
   simMsg.stage = stage;
@@ -280,7 +274,6 @@ void Simona::runGameTask()
               Serial.println("Incorrect button! Ending game play.");
               lost = 1;
               stage = SIMONA_STAGE_GAME_LOST;
-              // updateAndSendSimMsg(simMsg);
 
               while (readButton(buttons[i]))
               {
@@ -302,7 +295,6 @@ void Simona::runGameTask()
             {
               game_play = 1;
               stage = SIMONA_STAGE_VERIFICATION;
-              // updateAndSendSimMsg(simMsg);
               break;
             }
           }
@@ -373,15 +365,15 @@ void Simona::runGameTask()
           Serial.println("Congratulations!!! You have completed ALL rounds of the game!");
           updateAndSendSimMsg(simMsg);
 
-          controlLed(LED_RED, true);
-          controlLed(LED_GREEN, true);
-          controlLed(LED_BLUE, true);
-          controlLed(LED_YELLOW, true);
+          controlLed(BUTTON_RED_OUT, true);
+          controlLed(BUTTON_GREEN_OUT, true);
+          controlLed(BUTTON_BLUE_OUT, true);
+          controlLed(BUTTON_YELLOW_OUT, true);
           playWin();
-          controlLed(LED_RED, false);
-          controlLed(LED_GREEN, false);
-          controlLed(LED_BLUE, false);
-          controlLed(LED_YELLOW, false);
+          controlLed(BUTTON_RED_OUT, false);
+          controlLed(BUTTON_GREEN_OUT, false);
+          controlLed(BUTTON_BLUE_OUT, false);
+          controlLed(BUTTON_YELLOW_OUT, false);
 
           // Reset everything for a new game
           level = 1;
@@ -435,7 +427,7 @@ void Simona::runGameTask()
       playRoundTransitionMusic(m_currentRound);
 
       // Flash LEDs in sequence 20 times
-      const uint8_t allLeds[] = {LED_RED, LED_GREEN, LED_BLUE, LED_YELLOW};
+      const uint8_t allLeds[] = {BUTTON_RED_OUT, BUTTON_GREEN_OUT, BUTTON_BLUE_OUT, BUTTON_YELLOW_OUT};
       for (int j = 0; j < 6; j++)
       {
         for (int i = 0; i < 4; i++)
@@ -480,10 +472,10 @@ void Simona::runButtonTask()
       stage = SIMONA_STAGE_RESET; // Set the new reset stage.
       while (readButton(BTN_RESET))
       {
-        controlLed(LED_RESET, true);         // Turn on the reset LED.
+        controlLed(BUTTON_WHITE_OUT, true);         // Turn on the reset LED.
         vTaskDelay(10 / portTICK_PERIOD_MS); // wait for button release.
       }
-      controlLed(LED_RESET, false); // Turn on the reset LED.
+      controlLed(BUTTON_WHITE_OUT, false); // Turn on the reset LED.
       // Removed direct LED off call since reset logic handles it.
     }
     // ...existing code...

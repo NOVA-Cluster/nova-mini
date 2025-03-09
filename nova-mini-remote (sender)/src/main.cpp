@@ -17,7 +17,7 @@
 // Remove local pin definitions since they are now in configuration.h
 
 uint8_t buttons[4] = {BTN_RED, BTN_GREEN, BTN_BLUE, BTN_YELLOW};
-uint8_t leds[4] = {LED_RED, LED_GREEN, LED_BLUE, LED_YELLOW};
+uint8_t leds[4] = {BUTTON_RED_OUT, BUTTON_GREEN_OUT, BUTTON_BLUE_OUT, BUTTON_YELLOW_OUT};
 const char *buttonColors[4] = {"RED", "GREEN", "BLUE", "YELLOW"};
 const char *ledColors[4] = {"RED", "GREEN", "BLUE", "YELLOW"};
 
@@ -89,11 +89,11 @@ void setup()
   pinMode(BTN_RESET, INPUT);
 
   // Initialize LEDs with PWM
-  initLedPWM(LED_RED, LEDC_CHANNEL_RED);
-  initLedPWM(LED_GREEN, LEDC_CHANNEL_GREEN);
-  initLedPWM(LED_BLUE, LEDC_CHANNEL_BLUE);
-  initLedPWM(LED_YELLOW, LEDC_CHANNEL_YELLOW);
-  initLedPWM(LED_RESET, LEDC_CHANNEL_RESET);
+  initLedPWM(BUTTON_RED_OUT, LEDC_CHANNEL_RED);
+  initLedPWM(BUTTON_GREEN_OUT, LEDC_CHANNEL_GREEN);
+  initLedPWM(BUTTON_BLUE_OUT, LEDC_CHANNEL_BLUE);
+  initLedPWM(BUTTON_YELLOW_OUT, LEDC_CHANNEL_YELLOW);
+  initLedPWM(BUTTON_WHITE_OUT, LEDC_CHANNEL_RESET);
 
   if (0)
   {
@@ -138,7 +138,7 @@ void setup()
 
   webSetup();
 
-  // Initialize Simona singleton
+  // Initialize Simona game controller with hardware pins and color names
   Simona::initInstance(buttons, leds, buttonColors, ledColors);
 
   // Create tasks (functions now defined in Tasks.cpp)

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "EspNow.h"        // For ESP-NOW message transmission
 #include "SimonaTypes.h"   // Shared enum types and message structures
+#include "SimonaMessage.h"
 #include <ESPUI.h>         // Web UI components
 #include "configuration.h" // Pin definitions and game configuration
 #include "Web.h"           // For global game settings like SIMONA_CHEAT_MODE
@@ -11,20 +12,6 @@
 // External variables defined elsewhere
 extern uint16_t levelProgressText; // UI control ID for displaying game progress
 extern bool GAME_ENABLED;          // Global flag to enable/disable game input processing
-
-/**
- * @brief Function pointer type for controlling LEDs
- * @param led The LED pin/index to control
- * @param state The desired state (true = ON, false = OFF)
- */
-typedef void (*LedControlCallback)(uint8_t led, bool state);
-
-/**
- * @brief Function pointer type for reading button states
- * @param button The button pin/index to read
- * @return The state of the button (true = pressed, false = not pressed)
- */
-typedef bool (*ButtonReadCallback)(uint8_t button);
 
 /**
  * @brief Main game controller for the Simona memory game
@@ -42,11 +29,8 @@ public:
      * @param leds Array of LED pin numbers
      * @param buttonColors Array of button color names (as strings)
      * @param ledColors Array of LED color names (as strings)
-     * @param ledControl Optional callback for LED control
-     * @param buttonRead Optional callback for button state reading
      */
-    static void initInstance(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors,
-                             LedControlCallback ledControl = nullptr, ButtonReadCallback buttonRead = nullptr);
+    static void initInstance(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors);
 
     /**
      * @brief Get the singleton instance
@@ -65,11 +49,14 @@ public:
      * @param leds Array of LED pin numbers
      * @param buttonColors Array of button color names (as strings)
      * @param ledColors Array of LED color names (as strings)
-     * @param ledControl Optional callback for LED control
-     * @param buttonRead Optional callback for button state reading
      */
-    Simona(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors,
-           LedControlCallback ledControl = nullptr, ButtonReadCallback buttonRead = nullptr);
+    Simona(uint8_t *buttons, uint8_t *leds, const char **buttonColors, const char **ledColors);
+
+    /**
+     * @brief Update and send a SimonaMessage with current game state
+     * @param simMsg Reference to message object to be updated and sent
+     */
+    void updateAndSendSimMsg(SimonaMessage &simMsg);
 
     /**
      * @brief Reset the game to initial state
@@ -199,10 +186,6 @@ private:
     uint8_t level;              // Current level number
     SimonaStage stage;          // Current stage of the game
 
-    // Callback functions
-    LedControlCallback ledControl; // Function to control LEDs
-    ButtonReadCallback buttonRead; // Function to read button states
-
     // Game settings
     bool m_cheatMode = false; // Flag for cheat mode (predictable sequence)
     bool m_sequenceLocalEcho; // Flag for sequence local echo
@@ -222,11 +205,6 @@ private:
      */
     bool readButton(uint8_t button);
 
-    /**
-     * @brief Update and send a SimonaMessage with current game state
-     * @param simMsg Reference to message object to be updated and sent
-     */
-    void updateAndSendSimMsg(SimonaMessage &simMsg);
 };
 
 #endif // SIMONA_H
