@@ -5,6 +5,11 @@
 #include "driver/rmt.h"         // ESP32 RMT driver header
 #include "freertos/semphr.h"    // FreeRTOS semaphore header
 
+// Default RMT bit duration if not defined in configuration
+#ifndef RMT_BIT_DURATION_TICKS
+#define RMT_BIT_DURATION_TICKS 2560  // Default to nova-core value
+#endif
+
 // RMTMIDIOutput subclasses Stream so that it can be used as the output stream
 // for the Arduino MIDI Library. It converts each byte into a MIDI serial frame
 // (start bit, 8 data bits, stop bit) and sends it via the ESP32 RMT peripheral.

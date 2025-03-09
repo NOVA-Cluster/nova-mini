@@ -2,11 +2,11 @@
 #define CONFIGURATION_H
 
 // Pin Definitions for LEDs and Buttons
-#define LED_RED 23
-#define LED_GREEN 25
-#define LED_BLUE 26
-#define LED_YELLOW 27
-#define LED_RESET 32
+#define BUTTON_RED_OUT 23
+#define BUTTON_GREEN_OUT 25
+#define BUTTON_BLUE_OUT 26
+#define BUTTON_YELLOW_OUT 27
+#define BUTTON_WHITE_OUT 32
 
 #define BTN_RED 4
 #define BTN_GREEN 5
@@ -46,5 +46,8 @@
 #define PREF_KEY_WIRELESS_ENABLED "wireless_en"
 #define PREF_KEY_GAME_ENABLED "game_en"
 #define PREF_KEY_SEQUENCE_LOCAL_ECHO "seq_echo"
+
+// RMT MIDI Output Configuration
+#define RMT_BIT_DURATION_TICKS 32  // Nova mini-specific MIDI timing
 
 #endif // CONFIGURATION_H

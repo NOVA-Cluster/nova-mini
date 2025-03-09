@@ -57,8 +57,8 @@ size_t RMTMIDIOutput::write(uint8_t b) {
   }
   bits[9] = 1; // Stop bit (HIGH)
 
-  // Validated with oscilloscope.
-  const uint32_t BIT_DURATION_TICKS = 32;
+  // Use the configured bit duration
+  const uint32_t BIT_DURATION_TICKS = RMT_BIT_DURATION_TICKS;
 
   // Pack the 10 bits into 5 RMT items (each item can represent 2 pulses).
   rmt_item32_t items[5];
