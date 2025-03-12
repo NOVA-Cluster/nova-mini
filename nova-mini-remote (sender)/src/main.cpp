@@ -67,7 +67,7 @@ void initLedPWM(uint8_t pin, uint8_t channel) {
 
 void setup()
 {
-  Serial.begin(115200); // Initialize serial communication for debugging
+  Serial.begin(921600); // Initialize serial communication for debugging
   delay(2000);          // Add delay to allow the serial monitor to connect
 
   // Initialize safe serial printing

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "driver/rmt.h"         // ESP32 RMT driver header
 #include "freertos/semphr.h"    // FreeRTOS semaphore header
+#include "../configuration.h"    // Include configuration header
 
 // Default RMT bit duration if not defined in configuration
 #ifndef RMT_BIT_DURATION_TICKS
