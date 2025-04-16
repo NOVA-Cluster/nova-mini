@@ -11,8 +11,7 @@
 #include <WiFiType.h> // Include WiFiType library
 #include "Web.h"      // Include WebInterface header
 #include "Tasks.h"    // Include Tasks.h
-// Removed captive portal include
-// #include "CaptivePortal.h" // <-- Removed
+#include "EStop.h"    // Include EStop header
 
 // Remove local pin definitions since they are now in configuration.h
 
@@ -62,7 +61,6 @@ void checkWiFiStatus(void *parameter)
 void initLedPWM(uint8_t pin, uint8_t channel) {
   ledcSetup(channel, LEDC_FREQ_HZ, LEDC_RESOLUTION);
   ledcAttachPin(pin, channel);
-  ledcWrite(channel, LEDC_FULL_DUTY); // Initialize to full brightness (on state)
 }
 
 void setup()
@@ -94,6 +92,9 @@ void setup()
   initLedPWM(LED_BLUE, LEDC_CHANNEL_BLUE);
   initLedPWM(LED_YELLOW, LEDC_CHANNEL_YELLOW);
   initLedPWM(LED_RESET, LEDC_CHANNEL_RESET);
+
+  // Initialize E-Stop pin
+  pinMode(ESTOP_PIN, INPUT_PULLUP);
 
   if (0)
   {
@@ -131,9 +132,6 @@ void setup()
   Serial.print("SDK Version: ");
   Serial.println(ESP.getSdkVersion());
 
-  // Removed captive portal call:
-  // startCaptivePortal();
-
   espNowSetup(); // call the renamed setup function from EspNow.cpp
 
   webSetup();
@@ -144,6 +142,7 @@ void setup()
   // Create tasks (functions now defined in Tasks.cpp)
   xTaskCreate(gameTask, "Game Task", 4096, NULL, 1, NULL);
   xTaskCreate(buttonTask, "Button Task", 4096, NULL, 1, NULL);
+  xTaskCreate(eStopTask, "E-Stop Task", 2048, NULL, 2, NULL); // Higher priority for E-Stop
 
   // Create WiFi monitoring task
   xTaskCreate(
@@ -163,15 +162,6 @@ void setup()
       1,
       NULL);
 
-  xTaskCreate(
-      runEspuiTask, // Function that implements the task
-      "ESPUI_Task", // Text name for the task
-      4096,         // Stack size in words
-      NULL,         // Task input parameter
-      1,            // Priority of the task
-      NULL          // Task handle
-  );
-
   playStartupMusic(); // New: play startup music (short, under 1.5 seconds)
 }
 
@@ -182,5 +172,3 @@ void loop()
   // Empty loop as tasks are handled by FreeRTOS
   espNowLoop(); // call the renamed loop function from EspNow.cpp
 }
-
-// Remove gameTask and buttonTask function definitions
