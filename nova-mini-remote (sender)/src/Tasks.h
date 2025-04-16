@@ -6,5 +6,6 @@
 // Task function declarations
 void gameTask(void *pvParameters);
 void buttonTask(void *pvParameters);
+void eStopTask(void *pvParameters);
 
 #endif // TASKS_H
