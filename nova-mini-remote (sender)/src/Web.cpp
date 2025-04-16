@@ -10,8 +10,9 @@
 #include "Simona.h" // Add this include
 #include "freertos/semphr.h"
 #include <Preferences.h>
-#include "utilities/PreferencesManager.h"  // Updated path
-#include "EspNow.h" // Add this include for packet loss stats
+#include "utilities/PreferencesManager.h" // Updated path
+#include "EspNow.h"                       // Add this include for packet loss stats
+#include "EStop.h"        // Include EStop header for E-Stop functionality
 
 DNSServer dnsServer;
 
@@ -349,9 +350,11 @@ void textCallback(Control *sender, int type)
     Serial.println("=== End Text Callback ===\n");
 }
 
-void tabCallback(Control* sender, int type) {
+void tabCallback(Control *sender, int type)
+{
     // Use sender->label instead of sender->id for string comparison
-    if (strcmp(sender->label, "Cheat Mode") == 0) {
+    if (strcmp(sender->label, "Cheat Mode") == 0)
+    {
         SIMONA_CHEAT_MODE = !SIMONA_CHEAT_MODE;
         PreferencesManager::setBool(PREF_KEY_CHEAT_MODE, SIMONA_CHEAT_MODE);
         ESPUI.updateControlValue(sender, SIMONA_CHEAT_MODE ? "On" : "Off");
@@ -436,7 +439,7 @@ void webSetup()
                                                ControlColor::Peterriver,
                                                settingsTab,
                                                &switchCallback);
-    
+
     // Add tooltip explaining sequence local echo
     ESPUI.addControl(ControlType::Label, "",
                      "When disabled, LED sequences will only play on NOVA, not on the remote",
@@ -603,7 +606,12 @@ void webLoop()
             // Determine status message based on priority
             String statusMsg;
 
-            if (!WIRELESS_ENABLED)
+            if (EStop::getInstance()->isTriggered())
+            {
+                statusMsg = "⚠️ WIRELESS DISABLED (eStop) - No messages being sent";
+                statusControl->color = ControlColor::Alizarin; // Red
+            }
+            else if (!WIRELESS_ENABLED)
             {
                 statusMsg = "⚠️ WIRELESS DISABLED - No messages being sent";
                 statusControl->color = ControlColor::Alizarin; // Red
