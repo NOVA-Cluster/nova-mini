@@ -93,3 +93,27 @@ void eStopTask(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(ESTOP_TASK_INTERVAL));
     }
 }
+
+void espNowTask(void *pvParameters) {
+    UBaseType_t uxHighWaterMark;
+    TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
+    const char *pcTaskName = pcTaskGetName(xTaskHandle);
+    
+    safeSerialPrintf("ESP-NOW task is running on core %d\n", xPortGetCoreID());
+    
+    while (true) {
+        // Run ESP-NOW loop operations
+        espNowLoop();
+        
+        // Report task status periodically
+        static uint32_t lastExecutionTime = 0;
+        if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL) {
+            uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
+            lastExecutionTime = millis();
+        }
+        
+        // Use a 10ms delay which is typical for network communication tasks
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}

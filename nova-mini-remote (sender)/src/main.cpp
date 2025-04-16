@@ -132,7 +132,7 @@ void setup()
   Serial.print("SDK Version: ");
   Serial.println(ESP.getSdkVersion());
 
-  espNowSetup(); // call the renamed setup function from EspNow.cpp
+  espNowSetup();
 
   webSetup();
 
@@ -143,6 +143,7 @@ void setup()
   xTaskCreate(gameTask, "Game Task", 4096, NULL, 1, NULL);
   xTaskCreate(buttonTask, "Button Task", 4096, NULL, 1, NULL);
   xTaskCreate(eStopTask, "E-Stop Task", 2048, NULL, 2, NULL); // Higher priority for E-Stop
+  xTaskCreate(espNowTask, "ESP-NOW Task", 4096, NULL, 1, NULL); // Add ESP-NOW task
 
   // Create WiFi monitoring task
   xTaskCreate(
@@ -167,8 +168,5 @@ void setup()
 
 void loop()
 {
-  // Removed captive portal DNS call:
-  // dnsServer.processNextRequest();
   // Empty loop as tasks are handled by FreeRTOS
-  espNowLoop(); // call the renamed loop function from EspNow.cpp
 }

@@ -305,8 +305,15 @@ void sendSimonaMessage(const SimonaMessage &simMsg)
 }
 
 // Main loop for ESP-NOW tasks.
-// This function can be expanded for regular ESP-NOW operations.
+// Handles ESP-NOW operations and connection monitoring
 void espNowLoop()
 {
-    vTaskDelay(1);
+    if (!espNowInitialized) {
+        Serial.println("ESP-NOW not initialized, attempting to reinitialize...");
+        espNowSetup();
+        return;
+    }
+
+    // Add any periodic ESP-NOW operations here if needed
+    // For example, connection health checks or status updates
 }
