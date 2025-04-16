@@ -5,6 +5,7 @@
 #include <Preferences.h>  // Add this include
 #include "EspNow.h"       // Make sure we include our own header file
 #include "utilities/PreferencesManager.h" // Add this include
+#include "EStop.h"        // Include EStop header for E-Stop functionality
 
 static portMUX_TYPE espNowMux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -227,6 +228,13 @@ void sendSimonaMessage(const SimonaMessage &simMsg)
         return;
     }
 
+    // Check if E-Stop is triggered
+    if (EStop::getInstance()->isTriggered()) {
+        Serial.println("E-Stop triggered - not sending message");
+        addPacketStatus(false);  // Count as lost packet
+        return;
+    }
+    
     if (!espNowInitialized)
     {
         Serial.println("ESP-NOW not initialized, calling espNowSetup()...");
