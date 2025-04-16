@@ -50,4 +50,9 @@
 // RMT MIDI Output Configuration
 #define RMT_BIT_DURATION_TICKS 32  // Nova mini-specific MIDI timing
 
+// E-Stop Configuration
+#define ESTOP_PIN 19
+#define ESTOP_TASK_INTERVAL 2  // Check E-Stop status every 2ms
+#define ESTOP_DEBOUNCE_MS 50     // Debounce time in milliseconds
+
 #endif // CONFIGURATION_H
