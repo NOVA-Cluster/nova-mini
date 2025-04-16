@@ -760,12 +760,4 @@ void webLoop()
     }
 }
 
-void runEspuiTask(void *pvParameters)
-{
-    while (1)
-    {
-        webLoop();
-        // Increase task delay further
-        vTaskDelay(pdMS_TO_TICKS(200)); // Changed from 100 to 200
-    }
-}
+// Task definition moved to Tasks.cpp

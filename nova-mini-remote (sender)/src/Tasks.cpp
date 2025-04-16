@@ -1,14 +1,16 @@
 #include "Tasks.h"
-#include "utilities/utilities.h"  // Updated path
-#include "configuration.h"
-#include "Simona.h"
-#include "midi/MIDIControl.hpp"  // Updated path to MIDI module
-#include <MIDI.h>
-#include "EspNow.h"
 #include <WiFi.h>
-#include <WiFiType.h>
-#include "Web.h"
-#include "EStop.h"  // Added for E-Stop functionality
+#include <WiFiMulti.h>
+#include "configuration.h"
+#include "utilities/utilities.h"     // For safeSerialPrintf
+#include "Simona.h"                 // For Simona class
+#include "EStop.h"                  // For EStop class
+#include "EspNow.h"                 // For espNowLoop function
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+// Declare external WiFiMulti object
+extern WiFiMulti wifiMulti;
 
 // Task definitions
 void gameTask(void *pvParameters) {
@@ -115,5 +117,67 @@ void espNowTask(void *pvParameters) {
         
         // Use a 10ms delay which is typical for network communication tasks
         vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+void runEspuiTask(void *pvParameters) {
+    UBaseType_t uxHighWaterMark;
+    TaskHandle_t xTaskHandle = xTaskGetCurrentTaskHandle();
+    const char *pcTaskName = pcTaskGetName(xTaskHandle);
+    
+    safeSerialPrintf("ESPUI task is running on core %d\n", xPortGetCoreID());
+    
+    while (true) {
+        webLoop();
+        
+        // Report task status periodically
+        static uint32_t lastExecutionTime = 0;
+        if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL) {
+            uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+            safeSerialPrintf("%s stack free - %d running on core %d\n", pcTaskName, uxHighWaterMark, xPortGetCoreID());
+            lastExecutionTime = millis();
+        }
+        
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+void createTasks(void) {
+    // Create game and input handling tasks
+    xTaskCreate(gameTask, "Game Task", 4096, NULL, 1, NULL);
+    xTaskCreate(buttonTask, "Button Task", 4096, NULL, 1, NULL);
+    xTaskCreate(eStopTask, "E-Stop Task", 2048, NULL, 2, NULL);
+    xTaskCreate(espNowTask, "ESP-NOW Task", 4096, NULL, 1, NULL);
+
+    // Create WiFi monitoring task
+    xTaskCreate(TaskWiFiConnection, "WiFi Connection", 4096, NULL, 1, NULL);
+
+    // Create ESPUI web interface task
+    xTaskCreate(runEspuiTask, "ESPUI", 8192, NULL, 1, NULL);
+}
+
+void TaskWiFiConnection(void *pvParameters)
+{
+    uint32_t lastExecutionTime = 0;
+
+    Serial.println("TaskWiFiConnection is running");
+
+    while (1)
+    {
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("WiFi connection lost, attempting to reconnect...");
+            if (wifiMulti.run(5000) == WL_CONNECTED) {
+                Serial.println("WiFi reconnected");
+                Serial.print("IP address: ");
+                Serial.println(WiFi.localIP());
+            }
+        }
+        
+        if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL)
+        {
+            lastExecutionTime = millis();
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(2000)); // Check connection every 2 seconds
     }
 }

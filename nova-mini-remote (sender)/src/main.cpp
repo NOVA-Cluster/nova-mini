@@ -1,19 +1,22 @@
 #include <Arduino.h>
-#include "configuration.h" // New: Import configuration header
+#include "configuration.h"
 #include "Simona.h"
-#include "utilities/utilities.h"  // Updated path
+#include "utilities/utilities.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "midi/MIDIControl.hpp"  // Updated path to MIDI module
+#include "midi/MIDIControl.hpp"
 #include <MIDI.h>
-#include "EspNow.h"   // Now includes the declarations for espNowSetup() and espNowLoop()
-#include <WiFi.h>     // Include WiFi library
-#include <WiFiType.h> // Include WiFiType library
-#include "Web.h"      // Include WebInterface header
-#include "Tasks.h"    // Include Tasks.h
-#include "EStop.h"    // Include EStop header
+#include "EspNow.h"
+#include <WiFi.h>
+#include <WiFiType.h>
+#include <WiFiMulti.h>
+#include "Web.h"
+#include "Tasks.h"
+#include "EStop.h"
+#include "wifi_config.h"
 
-// Remove local pin definitions since they are now in configuration.h
+// Global WiFiMulti instance
+WiFiMulti wifiMulti;
 
 uint8_t buttons[4] = {BTN_RED, BTN_GREEN, BTN_BLUE, BTN_YELLOW};
 uint8_t leds[4] = {LED_RED, LED_GREEN, LED_BLUE, LED_YELLOW};
@@ -110,10 +113,16 @@ void setup()
   // WiFi Setup
   WiFi.mode(WIFI_AP_STA); // Set WiFi to AP+STA mode
   WiFi.disconnect();
+  WiFi.setSleep(false); // Disable power saving
 
   // Create AP name with MAC suffix
   String apName = "NovaMiniRemote_" + getLastFourOfMac();
   WiFi.softAP(apName.c_str(), "scubadandy");
+
+  // Initialize WiFiMulti and add access points from config
+  for (int i = 0; i < NETWORK_COUNT; i++) {
+      wifiMulti.addAP(networks[i].ssid, networks[i].password);
+  }
 
   // Print network information
   Serial.println("Device Information:");
@@ -139,29 +148,8 @@ void setup()
   // Initialize Simona singleton
   Simona::initInstance(buttons, leds, buttonColors, ledColors);
 
-  // Create tasks (functions now defined in Tasks.cpp)
-  xTaskCreate(gameTask, "Game Task", 4096, NULL, 1, NULL);
-  xTaskCreate(buttonTask, "Button Task", 4096, NULL, 1, NULL);
-  xTaskCreate(eStopTask, "E-Stop Task", 2048, NULL, 2, NULL); // Higher priority for E-Stop
-  xTaskCreate(espNowTask, "ESP-NOW Task", 4096, NULL, 1, NULL); // Add ESP-NOW task
-
-  // Create WiFi monitoring task
-  xTaskCreate(
-      checkWiFiStatus,
-      "WiFi Monitor",
-      2048,
-      NULL,
-      1,
-      NULL);
-
-  // Create a new FreeRTOS task for the ESPUI web interface
-  xTaskCreate(
-      runEspuiTask,
-      "ESPUI",
-      8192, // Increased stack size for web interface
-      NULL,
-      1,
-      NULL);
+  // Create all FreeRTOS tasks
+  createTasks();
 
   playStartupMusic(); // New: play startup music (short, under 1.5 seconds)
 }
