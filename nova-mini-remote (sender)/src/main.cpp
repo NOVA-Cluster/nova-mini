@@ -9,14 +9,10 @@
 #include "EspNow.h"
 #include <WiFi.h>
 #include <WiFiType.h>
-#include <WiFiMulti.h>
 #include "Web.h"
 #include "Tasks.h"
 #include "EStop.h"
 #include "wifi_config.h"
-
-// Global WiFiMulti instance
-WiFiMulti wifiMulti;
 
 uint8_t buttons[4] = {BTN_RED, BTN_GREEN, BTN_BLUE, BTN_YELLOW};
 uint8_t leds[4] = {LED_RED, LED_GREEN, LED_BLUE, LED_YELLOW};
@@ -118,11 +114,6 @@ void setup()
   // Create AP name with MAC suffix
   String apName = "NovaMiniRemote_" + getLastFourOfMac();
   WiFi.softAP(apName.c_str(), "scubadandy");
-
-  // Initialize WiFiMulti and add access points from config
-  for (int i = 0; i < NETWORK_COUNT; i++) {
-      wifiMulti.addAP(networks[i].ssid, networks[i].password);
-  }
 
   // Print network information
   Serial.println("Device Information:");

@@ -1,6 +1,5 @@
 #include "Tasks.h"
 #include <WiFi.h>
-#include <WiFiMulti.h>
 #include "configuration.h"
 #include "utilities/utilities.h"     // For safeSerialPrintf
 #include "Simona.h"                 // For Simona class
@@ -8,9 +7,6 @@
 #include "EspNow.h"                 // For espNowLoop function
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-// Declare external WiFiMulti object
-extern WiFiMulti wifiMulti;
 
 // Task definitions
 void gameTask(void *pvParameters) {
@@ -115,8 +111,8 @@ void espNowTask(void *pvParameters) {
             lastExecutionTime = millis();
         }
         
-        // Use a 10ms delay which is typical for network communication tasks
-        vTaskDelay(pdMS_TO_TICKS(10));
+        // Use a 1ms delay which is typical for network communication tasks
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
 
@@ -164,20 +160,15 @@ void TaskWiFiConnection(void *pvParameters)
 
     while (1)
     {
-        if (WiFi.status() != WL_CONNECTED) {
-            Serial.println("WiFi connection lost, attempting to reconnect...");
-            if (wifiMulti.run(5000) == WL_CONNECTED) {
-                Serial.println("WiFi reconnected");
-                Serial.print("IP address: ");
-                Serial.println(WiFi.localIP());
-            }
-        }
+        // Only monitor AP status since we're not connecting to other networks
+        uint8_t stationNum = WiFi.softAPgetStationNum();
         
         if (millis() - lastExecutionTime >= REPORT_TASK_INTERVAL)
         {
+            Serial.printf("AP Status - Connected stations: %d\n", stationNum);
             lastExecutionTime = millis();
         }
 
-        vTaskDelay(pdMS_TO_TICKS(2000)); // Check connection every 2 seconds
+        vTaskDelay(pdMS_TO_TICKS(2000)); // Check status every 2 seconds
     }
 }
