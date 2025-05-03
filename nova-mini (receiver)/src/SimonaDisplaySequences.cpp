@@ -281,7 +281,39 @@ void displaySimonaStageTransitionAnimation()
 // New function for LED_VERIFICATION state
 void displaySimonaStageVerificationAnimation()
 {
-    // TODO: implement verification animation
+    const int steps = 20;
+    const uint8_t lowVal = 5;   // ~2% brightness of 255
+    const uint8_t highVal = 15; // ~6% brightness of 255
+    const TickType_t delayMs = 30 / portTICK_PERIOD_MS;
+    static bool fadeOut = false;
+
+    while (currentLEDAnimationState == LED_VERIFICATION)
+    {
+        // Fade up: 2% -> 6%
+        for (int step = 0; step <= steps && currentLEDAnimationState == LED_VERIFICATION; step++)
+        {
+            float t = step / (float)steps;
+            uint8_t brightness;
+            
+            if (!fadeOut)
+            {
+                // Fade up: 2% -> 6%
+                brightness = lowVal + (uint8_t)((highVal - lowVal) * t);
+            }
+            else
+            {
+                // Fade down: 6% -> 2%
+                brightness = highVal - (uint8_t)((highVal - lowVal) * t);
+            }
+
+            fill_solid(leds, NUM_LEDS_FOR_TEST, CRGB(brightness, brightness, brightness));
+            FastLED.show();
+            vTaskDelay(delayMs);
+        }
+
+        // Toggle fade direction
+        fadeOut = !fadeOut;
+    }
 }
 
 // New function for LED_GAME_LOST state
@@ -453,7 +485,7 @@ reset_end:
 // Modified round transition animation function to be stack-friendly
 void displaySimonaStageRoundTransitionAnimation()
 {
-    safeSerialPrintf("********** Starting round transition animation\n");
+    //safeSerialPrintf("********** Starting round transition animation\n");
 
     // Reduce local variables to minimize stack usage
     const uint8_t pulseCount = 3;
