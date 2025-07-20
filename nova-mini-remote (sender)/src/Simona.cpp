@@ -215,6 +215,7 @@ void Simona::runGameTask()
 
     case SIMONA_STAGE_INPUT_COLLECTION: // 3
     {
+      Serial.println("   -- SIMONA_STAGE_INPUT_COLLECTION --   ");
       // Remove any local declarations of inputStart
       if (inputStart == 0)
       {
