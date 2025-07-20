@@ -31,6 +31,7 @@ enum LEDAnimationState {
 };
 
 extern volatile LEDAnimationState currentLEDAnimationState;
+extern uint32_t currentLastPressedMessageId; // last message_id for input collection animation
 
 // Shared relay control types and globals:
 struct RelayTask {

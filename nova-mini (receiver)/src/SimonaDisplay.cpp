@@ -6,6 +6,7 @@
 
 extern int currentLitButton; // Add extern declaration so currentLitButton is visible
 extern int currentLastPressedButton; 
+extern uint32_t currentLastPressedMessageId; // track last message_id for INPUT_COLLECTION
 
 /*
  * displaySimonaStageWaiting
@@ -62,6 +63,7 @@ void displaySimonaStageInputCollection(const SimonaMessage &msg)
                          msg.message_id, msg.level, msg.gamePlay, msg.lost, msg.litButton, msg.lastPressedButton);
     }
     currentLastPressedButton = msg.lastPressedButton;
+    currentLastPressedMessageId = msg.message_id; // capture message ID for animation timing
     currentLEDAnimationState = LED_INPUT_COLLECTION;
 }
 

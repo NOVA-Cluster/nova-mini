@@ -87,6 +87,7 @@ CRGB leds[NUM_LEDS_FOR_TEST]; // LED array for SM16703
 // Global variable definitions
 int currentLitButton = 0;
 int currentLastPressedButton = 0; // added definition for msg.lastPressedButton used in animations
+uint32_t currentLastPressedMessageId = 0; // track last message_id for INPUT_COLLECTION animations
 
 // Add WiFi event handler function
 void WiFiEvent(WiFiEvent_t event)

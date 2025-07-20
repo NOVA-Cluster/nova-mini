@@ -202,6 +202,9 @@ void displaySimonaStageSequenceGenerationAnimation()
 void displaySimonaStageInputCollectionAnimation()
 {
     extern int currentLastPressedButton;   // declare external variable for msg.lastPressedButton
+    extern uint32_t currentLastPressedMessageId; // track last message_id for INPUT_COLLECTION animations
+    static uint32_t inputCollectionEnterTime = 0;
+    static uint32_t lastPoofMessageId = 0;
     int button = currentLastPressedButton; // default value if undefined may be 0
 
     CRGB targetColor;
@@ -237,7 +240,22 @@ void displaySimonaStageInputCollectionAnimation()
     {
         leds[ledIndex] = targetColor;
         // Modified relay mapping: led 0 -> relay 3, led 1 -> relay 2, etc.
-        triggerRelay(NUM_LEDS_FOR_TEST - 1 - ledIndex, 25);
+        // Poof on new message_id and start timer
+        if (currentLastPressedMessageId != lastPoofMessageId) {
+            Serial.print("DEBUG: new poof LED ");
+            Serial.print(ledIndex);
+            Serial.print(", message_id ");
+            Serial.println(currentLastPressedMessageId);
+            lastPoofMessageId = currentLastPressedMessageId;
+            inputCollectionEnterTime = millis();
+            triggerRelay(NUM_LEDS_FOR_TEST - 1 - ledIndex, 25);
+        } else if (millis() - inputCollectionEnterTime <= 200) {
+            Serial.print("DEBUG: timer poof LED ");
+            Serial.print(ledIndex);
+            Serial.print(", message_id ");
+            Serial.println(currentLastPressedMessageId);
+            triggerRelay(NUM_LEDS_FOR_TEST - 1 - ledIndex, 25);
+        }
     }
     FastLED.show();
     vTaskDelay(50 / portTICK_PERIOD_MS);
